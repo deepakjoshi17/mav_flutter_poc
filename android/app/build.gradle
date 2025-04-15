@@ -1,0 +1,68 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "kotlinx-serialization" apply(false)
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+android {
+    namespace = "com.example.mav_flutter.mav_flutter"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    buildFeatures {
+        compose true
+    }
+    composeOptions {
+        kotlinCompilerExtensionVersion "1.4.8"
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8
+    }
+
+    defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId = "com.example.mav_flutter.mav_flutter"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    buildTypes {
+        release {
+            // TODO: Add your own signing config for the release build.
+            // Signing with the debug keys for now, so `flutter run --release` works.
+            signingConfig = signingConfigs.debug
+        }
+    }
+}
+
+dependencies {
+    implementation("com.amazonaws:ivs-broadcast:1.27.0:stages@aar")
+    implementation libs.androidx.recyclerview
+    implementation libs.androidx.ui.graphics.android
+    implementation libs.androidx.foundation.android
+    implementation libs.androidx.material3.android
+    implementation libs.androidx.constraintlayout
+    implementation libs.androidx.cardview
+    implementation libs.material
+    implementation libs.ivs.chat.messaging
+    implementation libs.androidx.activity.compose
+    implementation "com.squareup.okhttp3:okhttp:5.0.0-alpha.7"
+    implementation(libs.kotlinx.serialization.json)
+    implementation libs.converter.gson
+}
+
+flutter {
+    source = "../.."
+}
