@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_aws_ivs/flutter_aws_ivs.dart';
 import 'package:mav_flutter/model/chat_request_model.dart';
 import 'package:mav_flutter/model/create_chat_token_response_model.dart';
 import 'package:mav_flutter/model/join_meeting_request_model.dart';
@@ -42,6 +43,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   // This is used in the platform side to register the view.
   static const platform = MethodChannel('mav_flutter/controls');
+  FlutterAwsIvsController? iosIvsController;
   // This is used in the platform side to register the view.
   final String viewType = 'native_ivs_view_android';
   // Pass parameters to the platform side.
@@ -51,7 +53,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   DataProvider dataProvider = DataProvider();
 
-  String meetingId = "deepak-142";
+  String meetingId = "yogesh-10";
   String chatToken = '', videoToken = '', screenShareToken = '';
 
   CreateChatTokenResponseModel? createChatTokenResponse;
@@ -100,7 +102,19 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget getPlatformView() {
     if (Platform.isIOS) {
-      return Container();
+      return UiKitView(
+        viewType: 'flutter_aws_ivs',
+        onPlatformViewCreated: (int id) {
+          if(iosIvsController != null) {
+            iosIvsController!.initView();
+            return;
+          }
+          iosIvsController = FlutterAwsIvsController.init(id);
+          iosIvsController!.initView();
+        },
+        creationParams: creationParams,
+        creationParamsCodec: const StandardMessageCodec(),
+      );
     } else {
       return AndroidView(
         viewType: viewType,
@@ -135,20 +149,20 @@ class _MyHomePageState extends State<MyHomePage> {
           children: [
             getControlButton(
                 isAudioMuted ? Icons.mic_off_rounded : Icons.mic_outlined, () {
-              invokePlatformMethod("toggleMic");
+              executeIvsOperations("toggleMic");
               setState(() {
                 isAudioMuted = !isAudioMuted;
               });
             }),
             getControlButton(isVideoMuted ? Icons.videocam_off : Icons.videocam,
                 () {
-              invokePlatformMethod("toggleCamera");
+              executeIvsOperations("toggleCamera");
               setState(() {
                 isVideoMuted = !isVideoMuted;
               });
             }),
             getControlButton(Icons.chat, () {
-              invokePlatformMethod("sendMessage", args: {
+              executeIvsOperations("sendMessage", args: {
                 "message": "Hello from Flutter",
                 "messageType": "chatEvent"
               });
@@ -156,10 +170,10 @@ class _MyHomePageState extends State<MyHomePage> {
             getControlButton(stageJoined ? Icons.account_circle : Icons.no_accounts, () {
 
               if(stageJoined) {
-                invokePlatformMethod("leaveStage");
+                executeIvsOperations("leaveStage");
               }
               else {
-                invokePlatformMethod("joinStage", args: {
+                executeIvsOperations("joinStage", args: {
                   "videoToken": videoToken,
                   "chatToken": chatToken,
                   'audioMuted': isAudioMuted,
@@ -170,13 +184,13 @@ class _MyHomePageState extends State<MyHomePage> {
             getControlButton(screenSharing ? Icons.screen_lock_landscape : Icons.browser_not_supported, () {
 
               if(screenSharing) {
-                invokePlatformMethod("stopScreenShare");
+                executeIvsOperations("stopScreenShare");
                 setState(() {
                   screenSharing = false;
                 });
               }
               else {
-                invokePlatformMethod("startScreenShare", args: {
+                executeIvsOperations("startScreenShare", args: {
                   "displayToken": screenShareToken
                 });
                 setState(() {
@@ -188,6 +202,37 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
     );
+  }
+  void executeIvsOperations(String methodName, {dynamic args}) {
+    if (Platform.isIOS) {
+      switch(methodName){
+        case "joinStage":
+          setState(() {
+            stageJoined = true;
+          });
+          final participantToken = args['videoToken'] ?? '';
+          final chatToken = args['chatToken'] ?? '';
+          iosIvsController?.joinStage(participantToken);
+          break;
+        case "leaveStage":
+          setState(() {
+            stageJoined = false;
+          });
+          iosIvsController?.leaveStage();
+          break;
+        case "toggleMic":
+          iosIvsController?.toggleLocalAudioMute();
+          break;
+        case "toggleCamera":
+          iosIvsController?.toggleLocalVideoMute();
+          break;
+        default:
+          log("Invalid Method: $methodName, returned: $args");
+          break;
+      }
+    } else {
+      invokePlatformMethod(methodName, args: args);
+    }
   }
 
   void invokePlatformMethod(String methodName, {dynamic args}) async {
