@@ -34,11 +34,10 @@ dependencies:
   bhanzu_network:
     path: bhanzu_network
 
-  flutter_aws_ivs:
-    path: flutter_aws_ivs
-
   cupertino_icons: ^1.0.8
-  http_proxy: ^1.2.2
+  aws_common: 0.4.2+5
+  aws_signature_v4: ^0.3.0
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:

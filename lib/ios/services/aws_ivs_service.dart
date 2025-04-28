@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:aws_common/aws_common.dart';
 import 'package:aws_signature_v4/aws_signature_v4.dart';
-import 'package:flutter_aws_ivs/src/models/aws_ivs_stage_info.dart';
+import 'package:mav_flutter/ios/models/aws_ivs_stage_info.dart';
 import '../models/aws_ivs_create_participant_token.dart';
 
 class AwsIvsService {
@@ -104,6 +104,5 @@ class AwsIvsService {
 
 class IvsAwsHttpClient extends AWSCustomHttpClient {
   @override
-  // TODO: implement supportedProtocols
   SupportedProtocols get supportedProtocols => SupportedProtocols.http1;
 }

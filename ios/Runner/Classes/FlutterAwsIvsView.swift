@@ -6,6 +6,7 @@ import AmazonIVSBroadcast
 class FlutterAwsIvsView: NSObject, FlutterPlatformView {
     private var _awsBoardcastView: AWSBroadcastView
     private var _methodChannel: FlutterMethodChannel
+    private var _ivsChatManager: IVSChatManager
     
     func view() -> UIView {
         return _awsBoardcastView
@@ -21,6 +22,8 @@ class FlutterAwsIvsView: NSObject, FlutterPlatformView {
         _awsBoardcastView = AWSBroadcastView.init(frame: frame, collectionViewLayout: layout)
         
         _methodChannel = FlutterMethodChannel(name: "flutter_aws_ivs_\(viewId)", binaryMessenger: messenger)
+        
+        _ivsChatManager = IVSChatManager()
 
         super.init()
         // iOS views can be created here
@@ -45,11 +48,39 @@ class FlutterAwsIvsView: NSObject, FlutterPlatformView {
             
         case "toggleLocalAudioMute":
             toggleLocalAudioMute(call: call, result: result)
+
+        case "sendMessage":
+            sendChatMessage(call: call, result: result)
+            
+        case "joinChatRoom":
+            joinChatRoom(call: call, result: result)
+        
+        case "leaveChatRoom":
+            leaveChatRoom(call: call, result: result)
+        
         default:
             result(FlutterMethodNotImplemented)
         }
     }
+
+    func joinChatRoom(call: FlutterMethodCall, result: FlutterResult){
+        let req = call.arguments as! [String:Any]
+        let token = req["token"] as! String
+        let region = req["region"] as! String
+        _ivsChatManager.initializeManager(region: region)
+        _ivsChatManager.updateToken(token: token)
+        _ivsChatManager.connectToChatRoom()
+    }
     
+    func sendChatMessage(call: FlutterMethodCall, result: FlutterResult){
+        let message = call.arguments as! String
+        _ivsChatManager.sendMessage(message, type: MessageType.message)
+    }
+    
+    func leaveChatRoom(call: FlutterMethodCall, result: FlutterResult){
+        _ivsChatManager.kick(user: "")
+    }
+
     func toggleLocalAudioMute(call: FlutterMethodCall, result: FlutterResult){
         let isAudioMuted = _awsBoardcastView.toggleLocalAudioMute()
         result(isAudioMuted)

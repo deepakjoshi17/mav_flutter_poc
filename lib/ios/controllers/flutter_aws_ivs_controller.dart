@@ -1,6 +1,5 @@
 import 'package:flutter/services.dart';
 import '../models/aws_ivs_create_participant_token.dart';
-import 'package:flutter_aws_ivs/src/services/aws_ivs_service.dart';
 
 const onErrorMethodName = "onError";
 const onConnectionStateChangedMethodName = "onConnectionStateChanged";
@@ -45,9 +44,22 @@ class FlutterAwsIvsController {
   }
 
   Future<void> joinStage(String participantToken) async {
-    if (participantToken != null) {
-      return _channel.invokeMethod('joinStage', participantToken);
-    }
+    return _channel.invokeMethod('joinStage', participantToken);
+  }
+
+  Future<void> joinChatRoom(String chatRoomToken, String region) async {
+    return _channel.invokeMethod('joinChatRoom', {
+      "token": chatRoomToken,
+      "region": region,
+    });
+  }
+
+  Future<void> leaveChatRoom() async {
+    return _channel.invokeMethod('leaveChatRoom');
+  }
+
+  Future<void> sendChatMessage(String message) async {
+    return _channel.invokeMethod('sendMessage', message);
   }
 
   Future<void> leaveStage() async {
