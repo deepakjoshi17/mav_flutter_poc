@@ -66,6 +66,7 @@ class _MyHomePageState extends State<MyHomePage> {
   DataProvider dataProvider = DataProvider();
 
   String meetingId = "deepak-151";
+  String ownUserId = "admin-me@expinfi.com";
   String chatToken = '', videoToken = '', screenShareToken = '';
 
   CreateChatTokenResponseModel? createChatTokenResponse;
@@ -100,6 +101,32 @@ class _MyHomePageState extends State<MyHomePage> {
         log("Chat Token: $chatToken");
       });
     });
+
+    Future.delayed(Duration(seconds: 3), () {
+      // Fetch chat logs
+      dataProvider.getChatLogs(meetingId).then((value) {
+        if (value.data != null) {
+          final events = value.data!.events;
+          for (var event in events) {
+            if (event.type == "MESSAGE" &&
+                event.payload.type == "MESSAGE" &&
+                event.payload.attributes['messageType'] == "chatMessage") {
+              final message = ChatMessage(
+                content: event.payload.content,
+                isSent: event.payload.sender.userId == ownUserId,
+                timestamp: DateTime.parse(event.payload.sendTime),
+                id: event.payload.id,
+                attributes: {
+                  'messageType': event.payload.attributes['messageType'],
+                  'displayName': event.payload.sender.attributes['displayName'],
+                },
+              );
+              _chatService.addMessage(message);
+            }
+          }
+        }
+      });
+    });
   }
 
   void _setupChatListener() {
@@ -124,7 +151,8 @@ class _MyHomePageState extends State<MyHomePage> {
     });
     executeIvsOperations("sendMessage", args: {
       "message": message,
-      "messageType": "chatEvent"
+      "messageType": "chatMessage",
+      "senderId": ownUserId,
     });
   }
 
@@ -208,40 +236,41 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget getScreenShareButton() {
     return getControlButton(
-        screenSharing ? Icons.browser_not_supported : Icons.screen_lock_landscape,
-        () {
+        screenSharing
+            ? Icons.browser_not_supported
+            : Icons.screen_lock_landscape, () {
       if (screenSharing) {
-                executeIvsOperations("stopScreenShare");
-                setState(() {
-                  screenSharing = false;
-                });
-              } else {
-                executeIvsOperations("startScreenShare",
-                    args: {"displayToken": screenShareToken});
-                setState(() {
-                  screenSharing = true;
-                });
-              }
+        executeIvsOperations("stopScreenShare");
+        setState(() {
+          screenSharing = false;
+        });
+      } else {
+        executeIvsOperations("startScreenShare",
+            args: {"displayToken": screenShareToken});
+        setState(() {
+          screenSharing = true;
+        });
+      }
     }, color: screenSharing ? Colors.red : Colors.blue);
   }
 
   Widget getAudioButton() {
     return getControlButton(
-                isAudioMuted ? Icons.mic_off_rounded : Icons.mic_outlined, () {
-              executeIvsOperations("toggleMic");
-              setState(() {
-                isAudioMuted = !isAudioMuted;
-              });
+        isAudioMuted ? Icons.mic_off_rounded : Icons.mic_outlined, () {
+      executeIvsOperations("toggleMic");
+      setState(() {
+        isAudioMuted = !isAudioMuted;
+      });
     }, color: isAudioMuted ? Colors.blue : Colors.red);
   }
 
   Widget getVideoButton() {
     return getControlButton(isVideoMuted ? Icons.videocam_off : Icons.videocam,
-                () {
-              executeIvsOperations("toggleCamera");
-              setState(() {
-                isVideoMuted = !isVideoMuted;
-              });
+        () {
+      executeIvsOperations("toggleCamera");
+      setState(() {
+        isVideoMuted = !isVideoMuted;
+      });
     }, color: isVideoMuted ? Colors.blue : Colors.red);
   }
 
@@ -256,16 +285,16 @@ class _MyHomePageState extends State<MyHomePage> {
         stageJoined ? Icons.exit_to_app_outlined : Icons.start, () {
       if (stageJoined) {
         executeIvsOperations("leaveStage");
-              } else {
-                executeIvsOperations("joinStage", args: {
-                  "videoToken": videoToken,
-                  "chatToken": chatToken,
-                  'audioMuted': isAudioMuted,
-                  'videoMuted': isVideoMuted,
-                  "region": "us-east-1",
-                });
-              }
-            }, color: stageJoined ? Colors.red : Colors.blue);
+      } else {
+        executeIvsOperations("joinStage", args: {
+          "videoToken": videoToken,
+          "chatToken": chatToken,
+          'audioMuted': isAudioMuted,
+          'videoMuted': isVideoMuted,
+          "region": "us-east-1",
+        });
+      }
+    }, color: stageJoined ? Colors.red : Colors.blue);
   }
 
   void executeIvsOperations(String methodName, {dynamic args}) {
@@ -316,7 +345,8 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Widget getControlButton(IconData icon, Function() onTap, {Color color = Colors.blue}) {
+  Widget getControlButton(IconData icon, Function() onTap,
+      {Color color = Colors.blue}) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -338,10 +368,13 @@ class _MyHomePageState extends State<MyHomePage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => ChatUI(
-        chatManager: _chatManager,
-        chatService: _chatService,
-        onSendMessage: _handleSendMessage,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: ChatUI(
+          chatManager: _chatManager,
+          chatService: _chatService,
+          onSendMessage: _handleSendMessage,
+        ),
       ),
     );
   }

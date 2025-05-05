@@ -38,9 +38,7 @@ data class ChatMessageResponse(
 
 @Serializable
 @SerialName("Attributes")
-data class MessageAttributes(
-    @SerialName("message_type") val messageType: String = "",
-)
+data class MessageAttributes(val messageType: String = "", val senderId: String = "", )
 
 @Serializable
 data class Sender(

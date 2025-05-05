@@ -153,7 +153,8 @@ class MainActivity: FlutterFragmentActivity() {
                     stageChat.sendMessage(ChatMessageRequest(
                         content = call.argument("message") ?: "",
                         attributes = MessageAttributes(
-                            call.argument("messageType") ?: "chatEvent"
+                            call.argument("messageType") ?: "chatEvent",
+                            call.argument("senderId") ?: "NA"
                         )
                     ))
                     result.success(null)

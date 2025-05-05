@@ -197,7 +197,9 @@ class StageChat(var sink: EventChannel.EventSink?) {
     fun sendMessage(chatMessageRequest: ChatMessageRequest) {
         println("Send message $chatMessageRequest")
         val attributes: Map<String, String> = mapOf(
-            "message_type" to chatMessageRequest.attributes.messageType,
+            "messageType" to chatMessageRequest.attributes.messageType,
+            "senderId" to chatMessageRequest.attributes.senderId,
+            "displayName" to chatMessageRequest.attributes.senderId,
         )
 
         room?.sendMessage(SendMessageRequest(chatMessageRequest.content, attributes), object : SendMessageCallback {
