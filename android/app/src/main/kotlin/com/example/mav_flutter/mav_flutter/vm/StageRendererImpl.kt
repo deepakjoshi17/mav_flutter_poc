@@ -22,15 +22,19 @@ class StageRendererImpl(
         connectionState: Stage.ConnectionState,
         exception: BroadcastException?
     ) {
+        println("-------------->>>>>>> Connection state changed: ${connectionState.name}")
         this.connectionState.value = connectionState
     }
 
     override fun onParticipantJoined(stage: Stage, participantInfo: ParticipantInfo) {
+        println("-------------->>>>>>> Participant joined: ${participantInfo.participantId}")
         if (participantInfo.isLocal) {
             participantAdapter.participantUpdated(null) {
                 it.participantId = participantInfo.participantId
             }
         } else {
+
+            println("-------------->>>>>>> Remote Participant joined: ${participantInfo.attributes}")
             participantAdapter.participantJoined(
                 StageParticipant(participantInfo.isLocal, participantInfo.participantId)
             )
@@ -38,6 +42,7 @@ class StageRendererImpl(
     }
 
     override fun onParticipantLeft(stage: Stage, participantInfo: ParticipantInfo) {
+        println("-------------->>>>>>> Participant left: ${participantInfo.participantId}")
         if (participantInfo.isLocal) {
             participantAdapter.participantUpdated(participantInfo.participantId) {
                 it.participantId = null
@@ -52,6 +57,7 @@ class StageRendererImpl(
         participantInfo: ParticipantInfo,
         publishState: Stage.PublishState
     ) {
+        println("-------------->>>>>>> Publish state changed: ${publishState.name}")
         participantAdapter.participantUpdated(participantInfo.participantId) {
             it.publishState = publishState
         }
@@ -62,6 +68,7 @@ class StageRendererImpl(
         participantInfo: ParticipantInfo,
         subscribeState: Stage.SubscribeState
     ) {
+        println("-------------->>>>>>> Subscribe state changed: ${subscribeState.name}")
         participantAdapter.participantUpdated(participantInfo.participantId) {
             it.subscribeState = subscribeState
         }

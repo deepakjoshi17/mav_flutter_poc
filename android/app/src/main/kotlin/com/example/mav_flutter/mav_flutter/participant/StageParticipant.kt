@@ -5,7 +5,7 @@ import androidx.annotation.RequiresApi
 import com.amazonaws.ivs.broadcast.Stage
 import com.amazonaws.ivs.broadcast.StageStream
 
-class StageParticipant(val isLocal: Boolean, var participantId: String?) {
+class StageParticipant(val isLocal: Boolean, var participantId: String?, val attributes: Map<String, String>? = null) {
 
     @RequiresApi(Build.VERSION_CODES.P)
     var publishState = Stage.PublishState.NOT_PUBLISHED

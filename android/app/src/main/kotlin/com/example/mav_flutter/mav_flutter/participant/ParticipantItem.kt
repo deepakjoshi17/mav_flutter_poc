@@ -8,10 +8,12 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.cardview.widget.CardView
+import androidx.compose.ui.text.toUpperCase
 import com.amazonaws.ivs.broadcast.AudioDevice
 import com.amazonaws.ivs.broadcast.BroadcastConfiguration
 import com.amazonaws.ivs.broadcast.ImageDevice
 import com.example.mav_flutter.mav_flutter.R
+import java.util.Locale
 import kotlin.math.roundToInt
 
 @RequiresApi(Build.VERSION_CODES.P)
@@ -59,7 +61,9 @@ class ParticipantItem @JvmOverloads constructor(
         textViewParticipantId.text = participantId
         textViewPublish.text = participant.publishState.name
         textViewSubscribe.text = participant.subscribeState.name
-        avatarInitial.text = "DJ"
+        avatarInitial.text = participant.attributes?.get("name")?.substring(0, 1)
+            ?.uppercase(Locale.getDefault())
+            ?: "NA"
 
         val newImageStream = participant
             .streams

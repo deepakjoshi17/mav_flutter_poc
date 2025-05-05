@@ -95,21 +95,21 @@ class StageChat(var sink: EventChannel.EventSink?) {
                 }
 
                 override fun onMessageReceived(room: ChatRoom, message: ChatMessage) {
-                    Log.d("StageChat", "onMessageReceived")
+                    Log.d("StageChat ----->", "onMessageReceived, message: " + message.content)
                 }
 
                 override fun onEventReceived(room: ChatRoom, event: ChatEvent) {
                     Handler(Looper.getMainLooper()).post {
                         if (sink != null) sink!!.success(event.eventName)
                     }
-                    Log.d("StageChat", "onEventReceived 2 - " + event.eventName)
+                    Log.d("StageChat ----->", "onEventReceived 2 - " + event.eventName)
                 }
 
                 override fun onMessageDeleted(
                     room: ChatRoom,
                     event: DeleteMessageEvent
                 ) {
-                    Log.d("StageChat", "onMessageDeleted")
+                    Log.d("StageChat ----->", "onMessageDeleted")
                 }
 
                 override fun onUserDisconnected(
