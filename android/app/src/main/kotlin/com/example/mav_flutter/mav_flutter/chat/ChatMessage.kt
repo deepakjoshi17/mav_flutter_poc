@@ -5,7 +5,7 @@ import kotlinx.serialization.Transient
 import java.util.*
 
 const val EVENT_STICKER = "STICKER"
-const val EVENT_MESSAGE = "MESSAGE"
+const val EVENT_MESSAGE = "chatMessage"
 const val MESSAGE_TIMEOUT = 20 * 1000L
 
 @Serializable

@@ -3,6 +3,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mav_flutter/chat/chat_manager.dart';
+import 'package:mav_flutter/chat/chat_service.dart';
+import 'package:mav_flutter/chat/chat_ui.dart';
 import 'package:mav_flutter/model/chat_request_model.dart';
 import 'package:mav_flutter/model/create_chat_token_response_model.dart';
 import 'package:mav_flutter/model/join_meeting_request_model.dart';
@@ -45,6 +48,9 @@ class _MyHomePageState extends State<MyHomePage> {
   // This is used in the platform side to register the view.
   static const platform = MethodChannel('mav_flutter/controls');
   FlutterAwsIvsController? iosIvsController;
+  final ChatManager _chatManager = ChatManager();
+  late ChatService _chatService;
+  final List<ChatMessage> _chatMessages = [];
 
   // This is used in the platform side to register the view.
   final String viewType = 'native_ivs_view_android';
@@ -68,6 +74,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
+    _chatService = ChatService(initialMessages: _chatMessages);
+    _setupChatListener();
 
     var joinMeetingResponseModel = JoinMeetingRequestModel(
         meetingId: meetingId, name: "John Doe", sessionType: "LiveClass");
@@ -92,6 +100,38 @@ class _MyHomePageState extends State<MyHomePage> {
         log("Chat Token: $chatToken");
       });
     });
+  }
+
+  void _setupChatListener() {
+    _chatManager.chatMessages.listen((message) {
+      setState(() {
+        _chatService.addMessage(message);
+      });
+    });
+  }
+
+  void _handleSendMessage(String message) {
+    setState(() {
+      final newMessage = ChatMessage(
+        content: message,
+        isSent: true,
+        timestamp: DateTime.now(),
+        attributes: {
+          'messageType': 'chatMessage',
+        },
+      );
+      // _chatService.addMessage(newMessage);
+    });
+    executeIvsOperations("sendMessage", args: {
+      "message": message,
+      "messageType": "chatEvent"
+    });
+  }
+
+  @override
+  void dispose() {
+    _chatService.dispose();
+    super.dispose();
   }
 
   @override
@@ -155,51 +195,22 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            getControlButton(
-                isAudioMuted ? Icons.mic_off_rounded : Icons.mic_outlined, () {
-              executeIvsOperations("toggleMic");
-              setState(() {
-                isAudioMuted = !isAudioMuted;
-              });
-            }, color: isAudioMuted ? Colors.blue : Colors.red),
-            getControlButton(isVideoMuted ? Icons.videocam_off : Icons.videocam,
-                () {
-              executeIvsOperations("toggleCamera");
-              setState(() {
-                isVideoMuted = !isVideoMuted;
-              });
-            }, color: isVideoMuted ? Colors.blue : Colors.red),
-            getControlButton(Icons.chat, () {
-              executeIvsOperations("sendMessage", args: {
-                "message": "Hello from Flutter",
-                "messageType": "chatEvent"
-              });
-            }),
-            getControlButton(
-                stageJoined ? Icons.exit_to_app_outlined : Icons.account_circle, () {
-              if (stageJoined) {
-                setState(() {
-                  stageJoined = false;
-                });
-                executeIvsOperations("leaveStage");
-              } else {
-                setState(() {
-                  stageJoined = true;
-                });
-                executeIvsOperations("joinStage", args: {
-                  "videoToken": videoToken,
-                  "chatToken": chatToken,
-                  'audioMuted': isAudioMuted,
-                  'videoMuted': isVideoMuted,
-                  "region": "us-east-1",
-                });
-              }
-            }, color: stageJoined ? Colors.red : Colors.blue),
-            getControlButton(
-                screenSharing
-                    ? Icons.screen_lock_landscape
-                    : Icons.browser_not_supported, () {
-              if (screenSharing) {
+            getAudioButton(),
+            getVideoButton(),
+            getChatButton(),
+            joinOrLeaveStageButton(),
+            getScreenShareButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget getScreenShareButton() {
+    return getControlButton(
+        screenSharing ? Icons.browser_not_supported : Icons.screen_lock_landscape,
+        () {
+      if (screenSharing) {
                 executeIvsOperations("stopScreenShare");
                 setState(() {
                   screenSharing = false;
@@ -211,11 +222,50 @@ class _MyHomePageState extends State<MyHomePage> {
                   screenSharing = true;
                 });
               }
-            }, color: screenSharing ? Colors.red : Colors.blue),
-          ],
-        ),
-      ),
-    );
+    }, color: screenSharing ? Colors.red : Colors.blue);
+  }
+
+  Widget getAudioButton() {
+    return getControlButton(
+                isAudioMuted ? Icons.mic_off_rounded : Icons.mic_outlined, () {
+              executeIvsOperations("toggleMic");
+              setState(() {
+                isAudioMuted = !isAudioMuted;
+              });
+    }, color: isAudioMuted ? Colors.blue : Colors.red);
+  }
+
+  Widget getVideoButton() {
+    return getControlButton(isVideoMuted ? Icons.videocam_off : Icons.videocam,
+                () {
+              executeIvsOperations("toggleCamera");
+              setState(() {
+                isVideoMuted = !isVideoMuted;
+              });
+    }, color: isVideoMuted ? Colors.blue : Colors.red);
+  }
+
+  Widget getChatButton() {
+    return getControlButton(Icons.chat, () {
+      openChat();
+    }, color: Colors.blue);
+  }
+
+  Widget joinOrLeaveStageButton() {
+    return getControlButton(
+        stageJoined ? Icons.exit_to_app_outlined : Icons.start, () {
+      if (stageJoined) {
+        executeIvsOperations("leaveStage");
+              } else {
+                executeIvsOperations("joinStage", args: {
+                  "videoToken": videoToken,
+                  "chatToken": chatToken,
+                  'audioMuted': isAudioMuted,
+                  'videoMuted': isVideoMuted,
+                  "region": "us-east-1",
+                });
+              }
+            }, color: stageJoined ? Colors.red : Colors.blue);
   }
 
   void executeIvsOperations(String methodName, {dynamic args}) {
@@ -284,6 +334,15 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void openChat() {
-    log("Chat to be implemented");
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => ChatUI(
+        chatManager: _chatManager,
+        chatService: _chatService,
+        onSendMessage: _handleSendMessage,
+      ),
+    );
   }
 }

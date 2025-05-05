@@ -26,6 +26,7 @@ import com.example.mav_flutter.mav_flutter.screen_share.MyMediaProjectionService
 import com.example.mav_flutter.mav_flutter.vm.NativeViewModel
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.EventChannel.EventSink
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -105,6 +106,20 @@ class MainActivity: FlutterFragmentActivity() {
             .platformViewsController
             .registry
             .registerViewFactory("native_ivs_view_android", NativeViewFactory(this))
+
+        // Add event channel for chat messages
+        EventChannel(flutterEngine.dartExecutor.binaryMessenger, "mav_flutter/chat_messages").setStreamHandler(
+            object : EventChannel.StreamHandler {
+                override fun onListen(arguments: Any?, events: EventSink) {
+                    println("*****onListen called")
+                    stageChat.sink = events
+                }
+
+                override fun onCancel(arguments: Any?) {
+                    stageChat.sink = null
+                }
+            }
+        )
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler(fun(
             call: MethodCall,

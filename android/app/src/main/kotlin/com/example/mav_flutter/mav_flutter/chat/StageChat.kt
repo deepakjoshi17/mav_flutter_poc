@@ -30,6 +30,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import kotlin.math.sin
 
 class StageChat(var sink: EventChannel.EventSink?) {
     var room: ChatRoom? = null
@@ -95,7 +96,25 @@ class StageChat(var sink: EventChannel.EventSink?) {
                 }
 
                 override fun onMessageReceived(room: ChatRoom, message: ChatMessage) {
-                    Log.d("StageChat ----->", "onMessageReceived, message: " + message.content)
+                    val messageType = message.attributes?.get("messageType")
+                    Log.d("StageChat", "Message received: ${message.content}")
+                    Log.d("StageChat", "Message attributes: $messageType")
+
+                    // Only process messages with messageType 'chatMessage'
+                    if (messageType == "chatMessage") {
+                        Handler(Looper.getMainLooper()).post {
+                            val messageData = mapOf(
+                                "id" to message.id,
+                                "content" to message.content,
+                                "sender" to message.sender.attributes?.get("displayName"),
+                                "messageType" to messageType,
+                                "attributes" to mapOf(
+                                    "messageType" to messageType
+                                )
+                            )
+                            sink?.success(messageData)
+                        }
+                    }
                 }
 
                 override fun onEventReceived(room: ChatRoom, event: ChatEvent) {
