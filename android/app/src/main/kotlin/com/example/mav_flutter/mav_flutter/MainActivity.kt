@@ -42,7 +42,7 @@ class MainActivity: FlutterFragmentActivity() {
 
     private val callback = fun(intent: Intent) {
         println("*****Callback called")
-        viewModel.startScreenShare(this, displayToken, intent)
+        viewModel.startScreenShare(displayToken, intent)
     }
 
     private val receiver: MyBroadcastReceiver = MyBroadcastReceiver(callback)
@@ -123,7 +123,7 @@ class MainActivity: FlutterFragmentActivity() {
                     val audioMuted = args["audioMuted"] as Boolean
                     val videoMuted = args["videoMuted"] as Boolean
 
-                    viewModel.joinStage(token, audioMuted, videoMuted)
+                    viewModel.joinStage(token)
                     stageChat.join(chatToken, result)
                 }
                 "toggleMic" -> {

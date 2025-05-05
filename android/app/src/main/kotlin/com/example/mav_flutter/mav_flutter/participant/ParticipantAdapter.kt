@@ -13,15 +13,24 @@ import com.example.mav_flutter.mav_flutter.R
 @RequiresApi(Build.VERSION_CODES.P)
 class ParticipantAdapter : RecyclerView.Adapter<ParticipantAdapter.ViewHolder>() {
 
-    private val participants = mutableListOf<StageParticipant>()
+    val participants = mutableListOf<StageParticipant>()
+    private val screenShareParticipantIds = mutableSetOf<String>()
 
     init {
         setHasStableIds(true)
     }
 
     fun participantJoined(participant: StageParticipant) {
+        //check if the participant is already in the list
+        if (participants.any { it.participantId == participant.participantId }) {
+            return
+        }
         participants.add(participant)
         notifyItemInserted(participants.size - 1)
+    }
+
+    fun addScreenShareParticipant(participantId: String) {
+        screenShareParticipantIds.add(participantId)
     }
 
     fun participantLeft(participantId: String) {
@@ -77,6 +86,21 @@ class ParticipantAdapter : RecyclerView.Adapter<ParticipantAdapter.ViewHolder>()
         } else {
             super.onBindViewHolder(holder, position, payloads)
         }
+    }
+
+    fun clearScreenShareParticipants() {
+        val screenShareParticipants = participants.filter { participant ->
+            screenShareParticipantIds.contains(participant.participantId)
+        }
+        
+        screenShareParticipants.forEach { participant ->
+            val index = participants.indexOf(participant)
+            if (index != -1) {
+                participants.removeAt(index)
+                notifyItemRemoved(index)
+            }
+        }
+        screenShareParticipantIds.clear()
     }
 
     class ViewHolder(val participantItem: ParticipantItem) : RecyclerView.ViewHolder(participantItem)

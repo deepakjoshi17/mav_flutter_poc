@@ -30,8 +30,6 @@ import com.example.mav_flutter.mav_flutter.R
 @RequiresApi(Build.VERSION_CODES.O)
 class MyMediaProjectionService : SystemCaptureService() {
     private val CHANNEL_ID = "MediaProjectionServiceChannel"
-    private lateinit var mediaProjectionManager: MediaProjectionManager
-    private var screenCaptureAndroid: ScreenCapturerAndroid? = null
 
     companion object {
         const val ACTION_START_MEDIA_PROJECTION = "com.example.mav_flutter.ACTION_START_MEDIA_PROJECTION"
@@ -42,7 +40,6 @@ class MyMediaProjectionService : SystemCaptureService() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        mediaProjectionManager = applicationContext.getSystemService("media_projection") as MediaProjectionManager
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -70,72 +67,9 @@ class MyMediaProjectionService : SystemCaptureService() {
                 if(mpIntent != null) broadcastIntent.putExtra(EXTRA_DATA, mpIntent)
 
                 LocalBroadcastManager.getInstance(this).sendBroadcast(broadcastIntent)
-
-//                startScreenShare()
             }
         }
         return START_STICKY
-    }
-
-    private fun startScreenCapture(context: Context) {
-
-        screenCaptureAndroid = ScreenCapturerAndroid(mediaProjectionManager.createScreenCaptureIntent(), screenShareCallback)
-
-        val surfaceTextureHelper = SurfaceTextureHelper.create("ScreenCapture", null)
-        screenCaptureAndroid?.initialize(surfaceTextureHelper, applicationContext, capturerObserver)
-
-        val width: Int
-        val height: Int
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val manager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-            manager.currentWindowMetrics.bounds.also {
-                width = it.width()
-                height = it.height()
-            }
-        } else {
-            val manager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-            val display = manager.defaultDisplay
-            width = display.width
-            height = display.height
-        }
-        screenCaptureAndroid?.startCapture(width, height, 30)
-    }
-
-    private val screenShareCallback = object : android.media.projection.MediaProjection.Callback() {
-        override fun onCapturedContentResize(width: Int, height: Int) {
-            super.onCapturedContentResize(width, height)
-        }
-
-        override fun onCapturedContentVisibilityChanged(isVisible: Boolean) {
-            super.onCapturedContentVisibilityChanged(isVisible)
-        }
-    }
-
-    private fun stopScreenCapture() {
-        if(screenCaptureAndroid != null) {
-            screenCaptureAndroid?.stopCapture()
-            screenCaptureAndroid = null
-        }
-    }
-
-    private val capturerObserver = object : CapturerObserver {
-        override fun onCapturerStarted(p0: Boolean) {
-            println("onCapturerStarted")
-        }
-
-        override fun onCapturerStopped() {
-            println("onCapturerStopped")
-        }
-
-        override fun onFrameCaptured(p0: VideoFrame?) {
-            println("onFrameCaptured")
-        }
-
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        stopScreenCapture()
     }
 
     override fun onBind(intent: Intent?): IBinder? {

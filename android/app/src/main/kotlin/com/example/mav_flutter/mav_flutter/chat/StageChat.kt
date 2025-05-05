@@ -8,19 +8,20 @@ import com.amazonaws.ivs.chat.messaging.ChatRoomListener
 import com.amazonaws.ivs.chat.messaging.ChatToken
 import com.amazonaws.ivs.chat.messaging.DisconnectReason
 import com.amazonaws.ivs.chat.messaging.SendMessageCallback
-import com.amazonaws.ivs.chat.messaging.coroutines.receivedEvents
-import com.amazonaws.ivs.chat.messaging.coroutines.receivedMessages
 import com.amazonaws.ivs.chat.messaging.entities.ChatError
 import com.amazonaws.ivs.chat.messaging.entities.ChatEvent
 import com.amazonaws.ivs.chat.messaging.entities.ChatMessage
 import com.amazonaws.ivs.chat.messaging.entities.DeleteMessageEvent
 import com.amazonaws.ivs.chat.messaging.entities.DisconnectUserEvent
 import com.amazonaws.ivs.chat.messaging.requests.SendMessageRequest
-import io.flutter.plugin.common.EventChannel.EventSink
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
@@ -30,7 +31,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
-class StageChat(var sink: EventSink?) {
+class StageChat(var sink: EventChannel.EventSink?) {
     var room: ChatRoom? = null
 
     private fun initialize(chatToken: String) {
@@ -132,17 +133,35 @@ class StageChat(var sink: EventSink?) {
     }
 
     suspend fun receiveMessages() {
-        room?.receivedMessages()
-            ?.onStart { Log.d("StageChat", "onStart") }
-            ?.onEach { Log.d("StageChat", "onEach") }
-            ?.collect({ Log.d("StageChat", "onCollect") })
+        flow {
+            room?.let { chatRoom ->
+                chatRoom.listener?.let { listener ->
+                    while (true) {
+                        emit(Unit)
+                        kotlinx.coroutines.delay(100)
+                    }
+                }
+            }
+        }
+        .onStart { Log.d("StageChat", "onStart") }
+        .onEach { Log.d("StageChat", "onEach") }
+        .collect { Log.d("StageChat", "onCollect") }
     }
 
     suspend fun receiveEvents() {
-        room?.receivedEvents()
-            ?.onStart { Log.d("StageChat", "onStart") }
-            ?.onEach { Log.d("StageChat", "onEach") }
-            ?.collect { Log.d("StageChat", "onEach") }
+        flow {
+            room?.let { chatRoom ->
+                chatRoom.listener?.let { listener ->
+                    while (true) {
+                        emit(Unit)
+                        kotlinx.coroutines.delay(100)
+                    }
+                }
+            }
+        }
+        .onStart { Log.d("StageChat", "onStart") }
+        .onEach { Log.d("StageChat", "onEach") }
+        .collect { Log.d("StageChat", "onCollect") }
     }
 
     fun leave(methodCall: MethodCall?, result: MethodChannel.Result) {

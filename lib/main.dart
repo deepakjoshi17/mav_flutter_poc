@@ -59,7 +59,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   DataProvider dataProvider = DataProvider();
 
-  String meetingId = "deepak-148";
+  String meetingId = "deepak-151";
   String chatToken = '', videoToken = '', screenShareToken = '';
 
   CreateChatTokenResponseModel? createChatTokenResponse;
@@ -161,14 +161,14 @@ class _MyHomePageState extends State<MyHomePage> {
               setState(() {
                 isAudioMuted = !isAudioMuted;
               });
-            }),
+            }, color: isAudioMuted ? Colors.blue : Colors.red),
             getControlButton(isVideoMuted ? Icons.videocam_off : Icons.videocam,
                 () {
               executeIvsOperations("toggleCamera");
               setState(() {
                 isVideoMuted = !isVideoMuted;
               });
-            }),
+            }, color: isVideoMuted ? Colors.blue : Colors.red),
             getControlButton(Icons.chat, () {
               executeIvsOperations("sendMessage", args: {
                 "message": "Hello from Flutter",
@@ -176,10 +176,16 @@ class _MyHomePageState extends State<MyHomePage> {
               });
             }),
             getControlButton(
-                stageJoined ? Icons.account_circle : Icons.no_accounts, () {
+                stageJoined ? Icons.exit_to_app_outlined : Icons.account_circle, () {
               if (stageJoined) {
+                setState(() {
+                  stageJoined = false;
+                });
                 executeIvsOperations("leaveStage");
               } else {
+                setState(() {
+                  stageJoined = true;
+                });
                 executeIvsOperations("joinStage", args: {
                   "videoToken": videoToken,
                   "chatToken": chatToken,
@@ -188,7 +194,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   "region": "us-east-1",
                 });
               }
-            }),
+            }, color: stageJoined ? Colors.red : Colors.blue),
             getControlButton(
                 screenSharing
                     ? Icons.screen_lock_landscape
@@ -205,7 +211,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   screenSharing = true;
                 });
               }
-            }),
+            }, color: screenSharing ? Colors.red : Colors.blue),
           ],
         ),
       ),
@@ -260,13 +266,13 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Widget getControlButton(IconData icon, Function() onTap) {
+  Widget getControlButton(IconData icon, Function() onTap, {Color color = Colors.blue}) {
     return InkWell(
       onTap: onTap,
       child: Container(
           padding: const EdgeInsets.all(8.0),
           decoration: BoxDecoration(
-            color: Colors.red,
+            color: color,
             shape: BoxShape.circle,
           ),
           child: Icon(

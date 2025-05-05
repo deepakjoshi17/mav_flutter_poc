@@ -6,6 +6,7 @@ import com.amazonaws.ivs.broadcast.Stage
 import com.amazonaws.ivs.broadcast.StageStream
 
 class StageParticipant(val isLocal: Boolean, var participantId: String?) {
+
     @RequiresApi(Build.VERSION_CODES.P)
     var publishState = Stage.PublishState.NOT_PUBLISHED
     @RequiresApi(Build.VERSION_CODES.P)
@@ -17,7 +18,7 @@ class StageParticipant(val isLocal: Boolean, var participantId: String?) {
             return if (isLocal) {
                 "LocalUser"
             } else {
-                requireNotNull(participantId)
+                participantId ?: "UnknownParticipant"
             }
         }
 }
