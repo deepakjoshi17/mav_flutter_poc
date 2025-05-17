@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/services.dart';
 import '../models/aws_ivs_create_participant_token.dart';
 
@@ -6,6 +8,7 @@ const onConnectionStateChangedMethodName = "onConnectionStateChanged";
 const onLocalAudioStateChangedMethodName = "onLocalAudioStateChanged";
 const onLocalVideoStateChangedMethodName = "onLocalVideoStateChanged";
 const onBroadcastStateChangedMethodName = "onBroadcastStateChanged";
+const onMessageReceivedMethodName = "onMessageReceived";
 
 class FlutterAwsIvsController {
   late MethodChannel _channel;
@@ -38,6 +41,9 @@ class FlutterAwsIvsController {
         return;
       case onBroadcastStateChangedMethodName:
         _listener?.onBroadcastStateChanged(methodCall.arguments);
+        return;
+      case onMessageReceivedMethodName:   // Add this case
+        _listener?.onMessageReceived(methodCall.arguments);
         return;
     }
     return;
@@ -85,4 +91,39 @@ abstract class FlutterAwsIvsControllerListener {
   onLocalAudioStateChanged(bool isMuted);
   onLocalVideoStateChanged(bool isMuted);
   onBroadcastStateChanged(bool isBroadcasting);
+  onMessageReceived(Map<dynamic, dynamic> message);
+}
+
+
+class IVSIOSControllerListener implements FlutterAwsIvsControllerListener {
+  @override
+  onBroadcastStateChanged(bool isBroadcasting) {
+    log("IVSIOSControllerListener : Broadcast state changed: $isBroadcasting");
+  }
+
+  @override
+  onConnectionStateChanged(int state) {
+    log("IVSIOSControllerListener: Connection state changed: $state");
+  }
+
+  @override
+  onError() {
+    log("IVSIOSControllerListener: Error occurred");
+  }
+
+  @override
+  onLocalAudioStateChanged(bool isMuted) {
+    log("IVSIOSControllerListener: Local audio state changed: $isMuted");
+  }
+
+  @override
+  onLocalVideoStateChanged(bool isMuted) {
+    log("IVSIOSControllerListener: Local video state changed: $isMuted");
+  }
+
+  @override
+  onMessageReceived(Map message) {
+    log("IVSIOSControllerListener: Message received: $message");
+  }
+
 }

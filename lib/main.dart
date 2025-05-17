@@ -72,6 +72,8 @@ class _MyHomePageState extends State<MyHomePage> {
   CreateChatTokenResponseModel? createChatTokenResponse;
   JoinMeetingResponseModel? joinMeetingResponse;
 
+  IVSIOSControllerListener ivsiosControllerListener = IVSIOSControllerListener();
+
   @override
   void initState() {
     super.initState();
@@ -79,7 +81,10 @@ class _MyHomePageState extends State<MyHomePage> {
     _setupChatListener();
 
     var joinMeetingResponseModel = JoinMeetingRequestModel(
-        meetingId: meetingId, name: "John Doe", sessionType: "LiveClass");
+      meetingId: meetingId,
+      name: "John Doe",
+      sessionType: "LiveClass",
+    );
     dataProvider.joinMeeting(joinMeetingResponseModel).then((value) {
       setState(() {
         videoToken = value.data?.stageConfigs?.user?.token ?? "";
@@ -187,6 +192,7 @@ class _MyHomePageState extends State<MyHomePage> {
           }
           iosIvsController = FlutterAwsIvsController.init(id);
           iosIvsController!.initView();
+          iosIvsController!.setListener(ivsiosControllerListener);
         },
         creationParams: creationParams,
         creationParamsCodec: const StandardMessageCodec(),
@@ -369,7 +375,8 @@ class _MyHomePageState extends State<MyHomePage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: ChatUI(
           chatManager: _chatManager,
           chatService: _chatService,

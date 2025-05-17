@@ -24,8 +24,27 @@ class FlutterAwsIvsView: NSObject, FlutterPlatformView {
         _methodChannel = FlutterMethodChannel(name: "flutter_aws_ivs_\(viewId)", binaryMessenger: messenger)
         
         _ivsChatManager = IVSChatManager()
-
+        
         super.init()
+        
+        _ivsChatManager.onMessageReceived = { [weak self] message in
+            guard let self = self else { return }
+
+            let data: [String: Any] = [
+                "id": message.id,
+                "content": message.content,
+                "attributes": message.attributes ?? [:],
+                "sender": [
+                    "userId": message.sender.userId,
+                    "username": message.sender.attributes?["username"] ?? "",
+                    "avatar": message.sender.attributes?["avatar"] ?? ""
+                ],
+                "sendTime": "\(message.sendTime)"
+            ]
+
+            self._methodChannel.invokeMethod("onMessageReceived", arguments: data)
+        }
+        
         // iOS views can be created here
         _awsBoardcastView.stateProtocol = self
         _methodChannel.setMethodCallHandler(onMethodCall)
@@ -78,7 +97,7 @@ class FlutterAwsIvsView: NSObject, FlutterPlatformView {
     }
     
     func leaveChatRoom(call: FlutterMethodCall, result: FlutterResult){
-        _ivsChatManager.kick(user: "")
+        _ivsChatManager.disconnect()
     }
 
     func toggleLocalAudioMute(call: FlutterMethodCall, result: FlutterResult){

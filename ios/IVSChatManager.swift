@@ -13,6 +13,7 @@ class IVSChatManager: ObservableObject {
     private var chatRoom: ChatRoom?
     private var chatToken: String = ""
     private var awsRegion: String = ""
+    var onMessageReceived: ((ChatMessage) -> Void)?
     
     @Published var isAuthorised: Bool = false
     @Published var messages: [AnyHashable] = []
@@ -52,16 +53,16 @@ class IVSChatManager: ObservableObject {
                 chatRoom?.delegate = nil
                 chatRoom = nil
             }
-            let chatRoom = ChatRoom(
-               awsRegion: awsRegion){
+            self.chatRoom = ChatRoom(
+               awsRegion: awsRegion) {
                    return ChatToken(
-                    token: self.chatToken,
-                    tokenExpirationTime: nil, // this is optional
-                    sessionExpirationTime: nil // this is optional
-                )
+                       token: self.chatToken,
+                       tokenExpirationTime: nil,
+                       sessionExpirationTime: nil
+                   )
             }
-            chatRoom.delegate = self
-            try await chatRoom.connect()
+            self.chatRoom?.delegate = self
+            try await self.chatRoom?.connect()
         }
     }
 
@@ -97,6 +98,20 @@ class IVSChatManager: ObservableObject {
                 }
             })
         }
+    
+    func disconnect() {
+        Task(priority: .background) {
+            if let room = chatRoom {
+                room.disconnect()
+                room.delegate = nil
+                self.chatRoom = nil
+            }
+            DispatchQueue.main.async {
+                self.isAuthorised = false
+                self.messages.append(ErrorMessage(text: "Disconnected from chat", details: "Disconnected by user"))
+            }
+        }
+    }
 }
 
 
@@ -165,6 +180,8 @@ extension IVSChatManager: ChatRoomDelegate {
     }
 
     func room(_ room: ChatRoom, didReceive message: ChatMessage) {
+        print("Message Received on IVSChatManager : ")
+        self.onMessageReceived?(message)
         DispatchQueue.main.async {
             let msg = Message(
                 id: message.id,
