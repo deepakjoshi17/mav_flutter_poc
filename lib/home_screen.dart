@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mav_flutter/chat/chat_manager.dart';
 import 'package:mav_flutter/chat/chat_service.dart';
 import 'package:mav_flutter/chat/chat_ui.dart';
@@ -48,6 +49,8 @@ class _MyHomePageState extends State<MyHomePage> {
   late ChatManager _chatManager;
   late ChatService _chatService;
   final List<ChatMessage> _chatMessages = [];
+
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   // This is used in the platform side to register the view.
   final String viewType = 'native_ivs_view_android';
@@ -230,11 +233,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _setupChatListener() {
     _chatManager.chatMessages.listen((message) {
-      setState(() {
         if(message.messageType == "chatMessage") {
-          _chatMessages.add(message);
+          setState(() {
+            log("Chat message added to ui: ${message.content}");
+            // _chatMessages.add(message);
+            _chatService.addMessage(message);
+          });
         }
         else {
+
+          log("Chat event received: ${message.messageType}");
           switch(message.content) {
             case "SHARPEN_UP_LAUNCHED":
             case "SHARPEN_UP_RELAUNCHED":
@@ -302,7 +310,6 @@ class _MyHomePageState extends State<MyHomePage> {
             default:
           }
         }
-      });
     });
   }
 
@@ -325,6 +332,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        key: _scaffoldKey,
         backgroundColor: Colors.white,
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(100),
@@ -480,6 +488,13 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           const SizedBox(),
           buildJoinClassButton(() {
+
+            if(videoToken.isEmpty || chatToken.isEmpty) {
+              log("Tokens are empty while joining class");
+              Fluttertoast.showToast(msg: "Cannot join class, Please try again later", gravity: ToastGravity.TOP);
+
+              return;
+            }
             setState(() {
               stageJoined = true;
             });

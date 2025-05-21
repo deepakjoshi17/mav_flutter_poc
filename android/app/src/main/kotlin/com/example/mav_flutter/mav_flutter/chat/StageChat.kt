@@ -80,12 +80,12 @@ class StageChat(var sink: EventChannel.EventSink?) {
 
                 override fun onConnected(room: ChatRoom) {
                     Log.d("StageChat", "onConnected")
-                    if (this@StageChat.room != null) {
+                    /*if (this@StageChat.room != null) {
                         CoroutineScope(Dispatchers.IO).launch {
                             receiveMessages()
                             receiveEvents()
                         }
-                    }
+                    }*/
                 }
 
                 override fun onDisconnected(
