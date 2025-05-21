@@ -98,7 +98,13 @@ class AWSBroadcastView: UICollectionView {
         viewModel.toggleAudioOnlySubscribe(forParticipant: participantId)
     }
     
+    func startScreenShare(token: String, participantId: String){
+        viewModel.startScreenShare(token: token, participantId: participantId)
+    }
     
+    func stopScreenShare(){
+        viewModel.stopScreenShare()
+    }
     
 }
 

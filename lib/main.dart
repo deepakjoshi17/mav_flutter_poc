@@ -72,7 +72,8 @@ class _MyHomePageState extends State<MyHomePage> {
   CreateChatTokenResponseModel? createChatTokenResponse;
   JoinMeetingResponseModel? joinMeetingResponse;
 
-  IVSIOSControllerListener ivsiosControllerListener = IVSIOSControllerListener();
+  IVSIOSControllerListener ivsiosControllerListener =
+      IVSIOSControllerListener();
 
   @override
   void initState() {
@@ -90,6 +91,8 @@ class _MyHomePageState extends State<MyHomePage> {
         videoToken = value.data?.stageConfigs?.user?.token ?? "";
         screenShareToken = value.data?.stageConfigs?.display?.token ?? "";
         joinMeetingResponse = value.data;
+        screenShareParticipantId =
+            value.data?.stageConfigs?.display?.participantId ?? "";
         log("User Token: $videoToken");
         log("Display Token: $screenShareToken");
       });
@@ -251,8 +254,10 @@ class _MyHomePageState extends State<MyHomePage> {
           screenSharing = false;
         });
       } else {
-        executeIvsOperations("startScreenShare",
-            args: {"displayToken": screenShareToken});
+        executeIvsOperations("startScreenShare", args: {
+          "displayToken": screenShareToken,
+          "screenShareParticipantId": screenShareParticipantId,
+        });
         setState(() {
           screenSharing = true;
         });
@@ -332,6 +337,12 @@ class _MyHomePageState extends State<MyHomePage> {
           final message = args['message'] ?? '';
           final messageType = args['messageType'] ?? '';
           iosIvsController?.sendChatMessage(message);
+          break;
+        case "startScreenShare":
+          iosIvsController?.startScreenShare(args);
+          break;
+        case "stopScreenShare":
+          iosIvsController?.stopScreenShare();
           break;
         default:
           log("Invalid Method: $methodName, returned: $args");

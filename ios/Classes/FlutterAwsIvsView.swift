@@ -76,7 +76,15 @@ class FlutterAwsIvsView: NSObject, FlutterPlatformView {
         
         case "leaveChatRoom":
             leaveChatRoom(call: call, result: result)
-        
+            
+        case "startScreenShare":
+            let args = call.arguments as! NSDictionary
+            let token = args["displayToken"] as! String
+            let screenShareParticipantId = args["screenShareParticipantId"] as! String
+           _awsBoardcastView.startScreenShare(token: token, participantId: screenShareParticipantId)
+        case "stopScreenShare":
+            _awsBoardcastView.stopScreenShare()
+            
         default:
             result(FlutterMethodNotImplemented)
         }

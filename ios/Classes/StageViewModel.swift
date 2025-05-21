@@ -5,17 +5,24 @@
 import AmazonIVSBroadcast
 import Foundation
 import UIKit
+import ReplayKit
 
 struct AuthItem {
     let endpoint: String
     let streamKey: String
 }
 
+protocol IVSScreenShareDelegate: AnyObject {
+    func didOutputSampleBuffer(_ sampleBuffer: CMSampleBuffer, ofType type: RPSampleBufferType)
+    func didStopScreenShareWithError(_ error: Error?)
+}
+
+enum ChangeType {
+    case inserted, updated, deleted
+}
+
 class StageViewModel: NSObject {
-    
-    enum ChangeType {
-        case inserted, updated, deleted
-    }
+
     
     // MARK: - Bindable properties
     
@@ -43,6 +50,17 @@ class StageViewModel: NSObject {
     
     private var stage: IVSStage?
     private var localUserWantsPublish: Bool = true
+    
+    
+    // MARK: - IVS Stage Streaming Properties
+    private let recorder = RPScreenRecorder.shared()
+    private var isRecording = false
+    private var screenShareStage: IVSStage?
+    private var screenShareStream: IVSLocalStageStream?
+    private var customImageSource: IVSCustomImageSource?
+    private var screenShareParticipantId: String = ""
+    weak var delegate: IVSScreenShareDelegate?
+
 
     public var isVideoMuted = false {
         didSet {
@@ -231,6 +249,10 @@ class StageViewModel: NSObject {
         do {
             self.stage = nil
             let stage = try IVSStage(token: token, strategy: self)
+            let renderer = StageRenderer(getParticipantsData: {return self.participantsData}, signalParticipantUpdate: signalParticipantUpdate, dataForParticipant: dataForParticipant, mutatingParticipant: mutatingParticipant, updateConnectionState: { state in
+                self.stageConnectionState = state
+            },
+            displayErrorAlert: displayErrorAlert)
             stage.addRenderer(self)
             try stage.join()
             self.stage = stage
@@ -460,6 +482,83 @@ class StageViewModel: NSObject {
         )
     }
     
+    func startScreenShare(microphoneEnabled: Bool = false, token: String, participantId: String) {
+        guard !isRecording else { return }
+
+        recorder.isMicrophoneEnabled = microphoneEnabled
+        do {
+            self.screenShareParticipantId = participantId
+            
+            // 1. Setup image source and stream
+            let deviceDiscovery = IVSDeviceDiscovery()
+            let imageSource = deviceDiscovery.createImageSource(withName: "screenShareSource")
+            self.customImageSource = imageSource
+
+            let localStageStream = IVSLocalStageStream(device: imageSource)
+            self.screenShareStream = localStageStream
+
+            let configuration = IVSLocalStageStreamVideoConfiguration()
+            let config = IVSLocalStageStreamVideoConfiguration()
+            try config.setMaxBitrate(900_000)
+            try config.setMinBitrate(100_000)
+            try config.setTargetFramerate(30)
+            try config.setSize(CGSize(width: 360, height: 640))
+            config.degradationPreference = .balanced
+
+            // 2. Join the stage
+            let ssStage = try IVSStage(token: token, strategy: self)
+            try ssStage.join()
+            self.screenShareStage = ssStage
+
+            // 3. Start screen capture
+            recorder.startCapture(handler: { [weak self] (sampleBuffer, bufferType, error) in
+                guard let self = self else { return }
+
+                if let error = error {
+                    self.delegate?.didStopScreenShareWithError(error)
+                    return
+                }
+
+                if bufferType == .video {
+                    self.customImageSource?.onSampleBuffer(sampleBuffer)
+                }
+
+                self.delegate?.didOutputSampleBuffer(sampleBuffer, ofType: bufferType)
+
+            }, completionHandler: { [weak self] error in
+                if let error = error {
+                    self?.delegate?.didStopScreenShareWithError(error)
+                } else {
+                    self?.isRecording = true
+                }
+            })
+        }catch {
+            print("Error while trying to start screen share!")
+        }
+        
+    }
+
+    func stopScreenShare() {
+        guard isRecording else { return }
+
+        recorder.stopCapture { [weak self] error in
+            guard let self = self else { return }
+
+            self.isRecording = false
+            self.delegate?.didStopScreenShareWithError(error)
+
+            // Leave stage
+            self.screenShareStage?.leave()
+            self.screenShareStage = nil
+            self.screenShareStream = nil
+            self.customImageSource = nil
+        }
+    }
+
+    func isScreenSharing() -> Bool {
+        return isRecording
+    }
+    
 }
 
 // These callbacks are triggered by `IVSStage.refreshStrategy()`
@@ -478,11 +577,14 @@ extension StageViewModel: IVSStageStrategy {
     }
 
     func stage(_ stage: IVSStage, streamsToPublishForParticipant participant: IVSParticipantInfo) -> [IVSLocalStageStream] {
+        var streams = Array<IVSLocalStageStream>()
         // We should only try to publish streams for the local participant
-        guard participantsData[0].participantId == participant.participantId else {
-            return []
+        streams.append(contentsOf: localStreams)
+        if participant.participantId != screenShareParticipantId {
+            return streams
         }
-        return localStreams
+        streams.append(contentsOf: [screenShareStream] as? [IVSLocalStageStream] ?? [])
+        return streams
     }
 
 }

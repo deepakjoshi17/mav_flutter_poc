@@ -83,6 +83,14 @@ class FlutterAwsIvsController {
   Future<bool?> toggleLocalVideoMute() async {
     return _channel.invokeMethod<bool>('toggleLocalVideoMute');
   }
+
+  Future<void> startScreenShare(Map<String, dynamic> args) async {
+    return _channel.invokeMethod('startScreenShare', args);
+  }
+
+  Future<void> stopScreenShare() async {
+    return _channel.invokeMethod('stopScreenShare');
+  }
 }
 
 abstract class FlutterAwsIvsControllerListener {
