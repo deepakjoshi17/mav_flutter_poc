@@ -40,7 +40,9 @@ class _MeetingScreenState extends State<MeetingScreen> {
             Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => PreviewScreen()));
+                    builder: (context) => const MyHomePage(title: "Module 3 - Session 8")
+                )
+            );
           },
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

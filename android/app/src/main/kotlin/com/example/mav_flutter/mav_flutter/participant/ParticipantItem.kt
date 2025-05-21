@@ -15,6 +15,8 @@ import com.amazonaws.ivs.broadcast.ImageDevice
 import com.example.mav_flutter.mav_flutter.R
 import java.util.Locale
 import kotlin.math.roundToInt
+import androidx.core.graphics.toColorInt
+import kotlin.math.absoluteValue
 
 @RequiresApi(Build.VERSION_CODES.P)
 class ParticipantItem @JvmOverloads constructor(
@@ -37,6 +39,17 @@ class ParticipantItem @JvmOverloads constructor(
     private var imageDeviceUrn: String? = null
     private var audioDeviceUrn: String? = null
 
+    private var avatarBgColorsHex = listOf(
+        "#F12D8B",
+        "#FAB82B",
+        "#F15D22",
+        "#0079B5",
+        "#86DB99",
+        "#9795F0",
+        "#6034F2",
+        "#09CC91"
+    )
+
     override fun onFinishInflate() {
         super.onFinishInflate()
         previewContainer = findViewById(R.id.participant_preview_container)
@@ -58,12 +71,15 @@ class ParticipantItem @JvmOverloads constructor(
         } else {
             participant.participantId
         }
+
+        var name = participant.attributes?.get("name")
+        //split name by space and get first letter of each word
+        name = name?.split(" ")?.joinToString("") { it.substring(0, 1) }
+        avatarInitial.text = name?.uppercase(Locale.getDefault()) ?: "NA"
+
         textViewParticipantId.text = participantId
         textViewPublish.text = participant.publishState.name
         textViewSubscribe.text = participant.subscribeState.name
-        avatarInitial.text = participant.attributes?.get("name")?.substring(0, 1)
-            ?.uppercase(Locale.getDefault())
-            ?: "NA"
 
         val newImageStream = participant
             .streams
@@ -72,6 +88,11 @@ class ParticipantItem @JvmOverloads constructor(
             if (newImageStream.muted) "Video muted" else "Video not muted"
         } else {
             "No video stream"
+        }
+
+        if (newImageStream == null) {
+            val colorIndex = participantId.hashCode().absoluteValue % avatarBgColorsHex.size
+            avatarContainer.setCardBackgroundColor(avatarBgColorsHex[colorIndex].toColorInt())
         }
 
         val newAudioStream = participant

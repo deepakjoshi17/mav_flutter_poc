@@ -3,6 +3,7 @@ package com.example.mav_flutter.mav_flutter.vm
 import android.app.Application
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.AndroidViewModel
 import com.amazonaws.ivs.broadcast.*
@@ -22,9 +23,9 @@ class NativeViewModel(application: Application) : AndroidViewModel(application) 
     private val stageManager = StageManager(application, participantAdapter)
     private val streams = mutableListOf<LocalStageStream>()
 
-    init {
-        val localParticipant = StageParticipant(true, null)
-        participantAdapter?.participantJoined(localParticipant)
+    fun initLocalParticipant(attributes: Map<String, String>) {
+        val localParticipant = StageParticipant(true, null, attributes)
+        participantAdapter.participantJoined(localParticipant)
     }
 
     public override fun onCleared() {
@@ -89,4 +90,100 @@ class NativeViewModel(application: Application) : AndroidViewModel(application) 
 
     val canPublish: Boolean
         get() = streams.isNotEmpty()
+
+    fun updateAudioDevice(deviceId: String) {
+        try {
+            // Find the audio stream in the streams list
+            val audioStreamIndex = streams.indexOfFirst { it is AudioLocalStageStream }
+            if (audioStreamIndex != -1) {
+                // Remove the existing audio stream
+                streams.removeAt(audioStreamIndex)
+                
+                // Get available devices
+                val devices = deviceDiscovery.listLocalDevices()
+                
+                // Find and create new audio stream with selected device
+                val audioDevice = when (deviceId) {
+                    "Built-in Microphone" -> {
+                        // Get the default microphone
+                        devices.filter { it.descriptor.type == Device.Descriptor.DeviceType.MICROPHONE }
+                            .maxByOrNull { it.descriptor.isDefault }
+                    }
+                    else -> {
+                        // Find the specific device by name
+                        devices.filter { it.descriptor.type == Device.Descriptor.DeviceType.MICROPHONE }[0]
+                    }
+                }
+                
+                // Create and add new audio stream if device found
+                audioDevice?.let { device ->
+                    streams.add(AudioLocalStageStream(device))
+                    
+                    // Update participant with new stream
+                    participantAdapter.participantUpdated(null) {
+                        it.streams.clear()
+                        it.streams.addAll(streams)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating audio device", e)
+        }
+    }
+
+    fun updateVideoDevice(deviceId: String) {
+        try {
+            // Find the video stream in the streams list
+            val videoStreamIndex = streams.indexOfFirst { it is ImageLocalStageStream }
+            if (videoStreamIndex != -1) {
+                // Remove the existing video stream
+                streams.removeAt(videoStreamIndex)
+                
+                // Get available devices
+                val devices = deviceDiscovery.listLocalDevices()
+                
+                // Find and create new video stream with selected device
+                val videoDevice = when (deviceId) {
+                    "Built-in Camera" -> {
+                        // Get the front camera by default
+                        devices.filter { it.descriptor.type == Device.Descriptor.DeviceType.CAMERA }
+                            .maxByOrNull { it.descriptor.position == Device.Descriptor.Position.FRONT }
+                    }
+                    else -> {
+                        // Find the specific camera by name
+                        devices.filter { it.descriptor.type == Device.Descriptor.DeviceType.CAMERA }[0]
+                    }
+                }
+                
+                // Create and add new video stream if device found
+                videoDevice?.let { device ->
+                    streams.add(ImageLocalStageStream(device))
+                    
+                    // Update participant with new stream
+                    participantAdapter.participantUpdated(null) {
+                        it.streams.clear()
+                        it.streams.addAll(streams)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating video device", e)
+        }
+    }
+
+    fun updateVideoDeviceByDescriptor(device: Device) {
+        try {
+            val videoStreamIndex = streams.indexOfFirst { it is ImageLocalStageStream }
+            if (videoStreamIndex != -1) {
+                streams.removeAt(videoStreamIndex)
+            }
+            streams.add(ImageLocalStageStream(device))
+            participantAdapter.participantUpdated(null) {
+                it.streams.clear()
+                it.streams.addAll(streams)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating video device by descriptor", e)
+        }
+    }
 }

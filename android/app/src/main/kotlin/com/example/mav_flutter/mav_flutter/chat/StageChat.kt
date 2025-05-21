@@ -98,26 +98,19 @@ class StageChat(var sink: EventChannel.EventSink?) {
                 override fun onMessageReceived(room: ChatRoom, message: ChatMessage) {
                     val messageType = message.attributes?.get("messageType")
                     Log.d("StageChat", "Message received: ${message.content}")
-                    Log.d("StageChat", "Message attributes: $messageType")
+                    Log.d("StageChat", "Message attributes: ${message.attributes}")
 
-                    // Only process messages with messageType 'chatMessage'
-                    if (messageType == "chatMessage") {
                         Handler(Looper.getMainLooper()).post {
                             val messageData = mapOf(
                                 "id" to message.id,
                                 "content" to message.content,
                                 "sender" to message.sender.attributes?.get("displayName"),
                                 "messageType" to messageType,
-                                "attributes" to mapOf(
-                                    "messageType" to messageType,
-                                    "senderId" to message.sender.attributes?.get("senderId"),
-                                    "displayName" to message.sender.attributes?.get("displayName")
-                                ),
-                                "timestamp" to message.sendTime.toString()
+                                "attributes" to message.sender.attributes,
+                                "timestamp" to message.sendTime.time.toString()
                             )
                             sink?.success(messageData)
                         }
-                    }
                 }
 
                 override fun onEventReceived(room: ChatRoom, event: ChatEvent) {

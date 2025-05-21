@@ -59,11 +59,11 @@ class _ChatUIState extends State<ChatUI> {
   void _sendMessage() {
     if (_messageController.text.isNotEmpty) {
       final message = _messageController.text;
-      widget.chatService.addMessage(ChatMessage(
+      /*widget.chatService.addMessage(ChatMessage(
         content: message,
         isSent: true,
         timestamp: DateTime.now(),
-      ));
+      ));*/
       widget.onSendMessage(message);
       _messageController.clear();
     }
@@ -203,6 +203,7 @@ class ChatMessage {
   final bool isSent;
   final DateTime timestamp;
   final String id;
+  final String messageType;
   final Map<String, dynamic>? attributes;
 
   ChatMessage({
@@ -210,6 +211,7 @@ class ChatMessage {
     required this.isSent,
     required this.timestamp,
     String? id,
+    this.messageType = '',
     this.attributes,
   }) : id = id ?? '${timestamp.millisecondsSinceEpoch}_${content.hashCode}';
 

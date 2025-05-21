@@ -4,6 +4,7 @@ import 'package:mav_flutter/common/api_urls.dart';
 import 'package:mav_flutter/model/chat_logs_response_model.dart';
 import 'package:mav_flutter/model/chat_request_model.dart';
 import 'package:mav_flutter/model/create_chat_token_response_model.dart';
+import 'package:mav_flutter/model/get_participants_response_model.dart';
 import 'package:mav_flutter/model/join_meeting_request_model.dart';
 import 'package:mav_flutter/model/join_meeting_response_model.dart';
 
@@ -41,6 +42,17 @@ class DataProvider {
         requestMethod: RequestMethod.post,
         createData: (json) {
           return ChatLogsResponseModel.fromJson(json);
+        });
+  }
+
+  Future<ResponseModel<GetParticipantsResponseModel>> getParticipants(String meetingId) {
+    return _client.makeRequest(
+        baseUrl: ApiUrls.baseUrl,
+        url: ApiUrls.getParticipants,
+        data: {"meetingId": meetingId},
+        requestMethod: RequestMethod.post,
+        createData: (json) {
+          return GetParticipantsResponseModel.fromJson(json);
         });
   }
 }

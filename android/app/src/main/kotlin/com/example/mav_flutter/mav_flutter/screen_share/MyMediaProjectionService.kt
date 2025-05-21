@@ -1,30 +1,17 @@
 package com.example.mav_flutter.mav_flutter.screen_share
 
 import android.app.*
-import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.hardware.display.DisplayManager
-import android.hardware.display.VirtualDisplay
-import android.media.projection.MediaProjection
-import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.IBinder
-import android.util.Log
-import android.view.Surface
-import android.view.TextureView
-import android.view.WindowManager
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.amazonaws.ivs.broadcast.*
-import com.amazonaws.ivs.webrtc.CapturerObserver
-import com.amazonaws.ivs.webrtc.ScreenCapturerAndroid
-import com.amazonaws.ivs.webrtc.SurfaceTextureHelper
-import com.amazonaws.ivs.webrtc.VideoFrame
 import com.example.mav_flutter.mav_flutter.MainActivity
-import com.example.mav_flutter.mav_flutter.MainActivity.MyBroadcastReceiver
 import com.example.mav_flutter.mav_flutter.R
+import com.example.mav_flutter.mav_flutter.vm.ScreenCaptureBroadcastReceiver
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -55,7 +42,7 @@ class MyMediaProjectionService : SystemCaptureService() {
             ACTION_START_MEDIA_PROJECTION -> {
                 val resultCode = intent.getIntExtra("resultCode", -1)
 
-                val broadcastIntent = Intent(this, MyBroadcastReceiver::class.java)
+                val broadcastIntent = Intent(this, ScreenCaptureBroadcastReceiver::class.java)
                 broadcastIntent.setAction(ACTION_START_MEDIA_PROJECTION)
                 broadcastIntent.putExtra("resultCode", resultCode)
                 val mpIntent: Intent? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
