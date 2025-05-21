@@ -5,7 +5,9 @@ import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
-import com.amazonaws.ivs.broadcast.*
+import com.amazonaws.ivs.broadcast.BroadcastException
+import com.amazonaws.ivs.broadcast.LocalStageStream
+import com.amazonaws.ivs.broadcast.Stage
 import com.example.mav_flutter.mav_flutter.participant.ParticipantAdapter
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -20,6 +22,9 @@ class StageManager(
     @RequiresApi(Build.VERSION_CODES.P)
     private val _mainStageConnectionState = MutableStateFlow(Stage.ConnectionState.DISCONNECTED)
     private val _screenShareConnectionState = MutableStateFlow(Stage.ConnectionState.DISCONNECTED)
+
+    // Separate adapter for screen share stage
+    private var screenShareParticipantAdapter: ParticipantAdapter? = null
 
     fun joinStage(token: String, streams: List<LocalStageStream>, isScreenShare: Boolean = false) {
         if (isScreenShare) {
@@ -42,7 +47,7 @@ class StageManager(
         }
 
         try {
-            val newStage = createStage(token, streams, false)
+            val newStage = createStage(token, streams, false, participantAdapter)
             newStage.join()
             mainStage = newStage
         } catch (e: BroadcastException) {
@@ -60,7 +65,9 @@ class StageManager(
         }
 
         try {
-            val newStage = createStage(token, streams, true)
+            // Use a new adapter for screen share
+            screenShareParticipantAdapter = ParticipantAdapter()
+            val newStage = createStage(token, streams, true, screenShareParticipantAdapter!!)
             newStage.join()
             screenShareStage = newStage
         } catch (e: BroadcastException) {
@@ -70,9 +77,9 @@ class StageManager(
         }
     }
 
-    private fun createStage(token: String, streams: List<LocalStageStream>, isScreenShare: Boolean): Stage {
+    private fun createStage(token: String, streams: List<LocalStageStream>, isScreenShare: Boolean, adapter: ParticipantAdapter): Stage {
         return Stage(application, token, StageStrategyImpl(streams, true)).apply {
-            addRenderer(StageRendererImpl(participantAdapter, if(isScreenShare) _screenShareConnectionState else _mainStageConnectionState , isScreenShare))
+            addRenderer(StageRendererImpl(adapter, if(isScreenShare) _screenShareConnectionState else _mainStageConnectionState , isScreenShare))
         }
     }
 
@@ -91,6 +98,9 @@ class StageManager(
         screenShareStage?.leave()
         screenShareStage?.release()
         screenShareStage = null
+        // Only clear screen share participants from the screen share adapter
+        screenShareParticipantAdapter?.clearScreenShareParticipants()
+        screenShareParticipantAdapter = null
     }
 
     fun setPublishEnabled(enabled: Boolean) {
@@ -109,7 +119,6 @@ class StageManager(
 
     fun leaveScreenShareStage() {
         cleanupScreenShareStage()
-        participantAdapter.clearScreenShareParticipants()
     }
 
     companion object {

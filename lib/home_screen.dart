@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mav_flutter/chat/chat_manager.dart';
 import 'package:mav_flutter/chat/chat_service.dart';
 import 'package:mav_flutter/chat/chat_ui.dart';
@@ -235,6 +236,51 @@ class _MyHomePageState extends State<MyHomePage> {
         }
         else {
           switch(message.content) {
+            case "SHARPEN_UP_LAUNCHED":
+            case "SHARPEN_UP_RELAUNCHED":
+              showModalBottomSheet(
+                context: context,
+                enableDrag: false,
+                isScrollControlled: true,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+                backgroundColor: Colors.transparent,
+                builder: (context) => Container(
+                  padding:
+                  EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+                  child: Stack(
+                    children: [
+                      Container(
+                        color: Colors.white,
+                        child: //show webview
+                        InAppWebView(
+                            initialUrlRequest: URLRequest(
+                              url: WebUri("https://www.bhanzu.com"),
+                            ),
+                            onLoadStart: (_, url) {
+                              setState(() {
+                                showInAppLoader = true;
+                              });
+                            },
+                            onLoadStop: (_, url) {
+                              setState(() {
+                                showInAppLoader = false;
+                              });
+                            }),
+                      ),
+                      if (showInAppLoader)
+                        Center(
+                          child: CircularProgressIndicator(color: Colors.grey,),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+              break;
+            case "SHARPEN_UP_ENDED":
+              //Close sharpen up
+              break;
             case "LAUNCH_SESSION_FEEDBACK":
               showModalBottomSheet(
                 context: context,
@@ -451,25 +497,29 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget getControls() {
-    return SafeArea(
-      child: Container(
-        width: double.maxFinite,
-        margin: EdgeInsets.symmetric(horizontal: 16),
-        padding: EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.indigo,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            getAudioButton(),
-            getVideoButton(),
-            getChatButton(),
-            getScreenShareButton(),
-            sharpenUpButton(),
-            joinOrLeaveStageButton(),
-          ],
+    return Container(
+      color: Colors.white,
+      child: SafeArea(
+        child: Container(
+          width: double.maxFinite,
+          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: Color(0xFFEFECEA),
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              getAudioButton(),
+              getVideoButton(),
+              getChatButton(),
+              // raiseHandButton(),
+              getScreenShareButton(),
+              getMoreIcon(),
+              joinOrLeaveStageButton(),
+            ],
+          ),
         ),
       ),
     );
@@ -496,9 +546,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget getScreenShareButton() {
     return getControlButton(
-        screenSharing
-            ? Icons.browser_not_supported
-            : Icons.screen_lock_landscape, () {
+        'assets/ic_screen_share.svg', () {
       if (screenSharing) {
         executeIvsOperations("stopScreenShare");
         setState(() {
@@ -511,17 +559,23 @@ class _MyHomePageState extends State<MyHomePage> {
           screenSharing = true;
         });
       }
-    }, color: screenSharing ? Colors.white : Colors.grey);
+    });
+  }
+
+  Widget getMoreIcon() {
+    return getControlButton('assets/ic_more.svg', () {
+
+    });
   }
 
   Widget getAudioButton() {
     return getControlButton(
-        isAudioMuted ? Icons.mic_off_rounded : Icons.mic_outlined, () {
+        'assets/ic_microphone.svg', () {
       executeIvsOperations("toggleMic");
       setState(() {
         isAudioMuted = !isAudioMuted;
       });
-    }, color: isAudioMuted ? Colors.grey : Color(0xFFF15D22));
+    }, enabled: !isAudioMuted, disabledIcon: 'assets/ic_disabled_microphone.svg', isAudioVideo: true);
   }
 
   Widget getPreviewAudioButton() {
@@ -539,13 +593,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget getVideoButton() {
-    return getControlButton(isVideoMuted ? Icons.videocam_off : Icons.videocam,
+    return getControlButton('assets/ic_video_cam.svg',
         () {
       executeIvsOperations("toggleCamera");
       setState(() {
         isVideoMuted = !isVideoMuted;
       });
-    }, color: isVideoMuted ? Colors.grey : Color(0xFFF15D22));
+    }, enabled: !isVideoMuted, disabledIcon: 'assets/ic_disabled_video_cam.svg', isAudioVideo: true);
   }
 
   Widget getPreviewVideoButton() {
@@ -563,14 +617,14 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget getChatButton() {
-    return getControlButton(Icons.chat, () {
+    return getControlButton('assets/ic_ivs_chat.svg', () {
       openChat();
-    }, color: Colors.grey);
+    });
   }
 
   Widget joinOrLeaveStageButton() {
     return getControlButton(
-        stageJoined ? Icons.exit_to_app_outlined : Icons.start, () {
+        'assets/ic_exit_meet.svg', () {
       if (stageJoined) {
         setState(() {
           stageJoined = false;
@@ -588,7 +642,7 @@ class _MyHomePageState extends State<MyHomePage> {
           "region": "us-east-1",
         });
       }
-    }, color: stageJoined ? Colors.red : Colors.grey);
+    }, isAudioVideo: true);
   }
 
   void executeIvsOperations(String methodName, {dynamic args}) {
@@ -751,21 +805,23 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget getControlButton(IconData icon, Function() onTap,
-      {Color color = Colors.grey}) {
+  Widget getControlButton(String icon, Function() onTap, {bool enabled = false, String disabledIcon = '', bool isAudioVideo = false}) {
     return InkWell(
       onTap: onTap,
       child: Container(
-          padding: const EdgeInsets.all(8.0),
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            icon,
-            size: 24,
-            color: Colors.white,
-          )),
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
+        child: Container(
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: enabled ? Color(0xFFF15D22) : (isAudioVideo ? Color(0xFFFDEEE8) : Colors.white),
+              shape: BoxShape.circle,
+            ),
+            child: SvgPicture.asset((!enabled && disabledIcon.isNotEmpty) ? disabledIcon : icon, height: 24, width: 24, colorFilter: ColorFilter.mode(enabled ? Colors.white : (isAudioVideo ? Color(0xFFF15D22) : Colors.black), BlendMode.srcIn),)),
+      ),
     );
   }
 
@@ -786,49 +842,10 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget sharpenUpButton() {
-    return getControlButton(Icons.ad_units_outlined, () {
-      //Open bottom sheet with a webview
-      showModalBottomSheet(
-        context: context,
-        enableDrag: false,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        backgroundColor: Colors.transparent,
-        builder: (context) => Container(
-          height: MediaQuery.of(context).size.height * 0.7,
-          padding:
-              EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-          child: Stack(
-            children: [
-              Container(
-                color: Colors.white,
-                child: //show webview
-                    InAppWebView(
-                        initialUrlRequest: URLRequest(
-                          url: WebUri("https://www.bhanzu.com"),
-                        ),
-                        onLoadStart: (_, url) {
-                          setState(() {
-                            showInAppLoader = true;
-                          });
-                        },
-                        onLoadStop: (_, url) {
-                          setState(() {
-                            showInAppLoader = false;
-                          });
-                        }),
-              ),
-              if (showInAppLoader)
-                Center(
-                  child: CircularProgressIndicator(color: Colors.grey,),
-                ),
-            ],
-          ),
-        ),
-      );
-    }, color: Colors.grey);
+  Widget raiseHandButton() {
+    return getControlButton('assets/ic_raise_hand.svg', () {
+      //Implement hand raise functionality
+    });
   }
 
   Widget buildJoinClassButton(Function() onTap) {
