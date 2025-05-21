@@ -186,16 +186,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _initializeDevices() async {
     try {
       if (Platform.isIOS) {
-        // For iOS, we'll get devices through the platform channel
-        final audioDevices = await platform.invokeMethod<List<dynamic>>('getAudioDevices');
-        final videoDevices = await platform.invokeMethod<List<dynamic>>('getVideoDevices');
-        setState(() {
-          availableAudioDevices = audioDevices?.cast<String>() ?? [];
-          // For iOS, fallback to string list for video
-          availableVideoDevices = videoDevices?.cast<String>() ?? [];
-          if (availableAudioDevices.isNotEmpty) selectedAudioDevice = availableAudioDevices.first;
-          if (availableVideoDevices.isNotEmpty) selectedVideoDevice = availableVideoDevices.first;
-        });
+
       } else {
         // For Android, get devices as list of maps for video
         final audioDevices = await platform.invokeMethod<List<dynamic>>('getAudioDevices');

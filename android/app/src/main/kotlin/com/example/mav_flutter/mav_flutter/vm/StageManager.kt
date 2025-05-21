@@ -18,7 +18,8 @@ class StageManager(
     private var screenShareStage: Stage? = null
     private var publishEnabled = true
     @RequiresApi(Build.VERSION_CODES.P)
-    private val _connectionState = MutableStateFlow(Stage.ConnectionState.DISCONNECTED)
+    private val _mainStageConnectionState = MutableStateFlow(Stage.ConnectionState.DISCONNECTED)
+    private val _screenShareConnectionState = MutableStateFlow(Stage.ConnectionState.DISCONNECTED)
 
     fun joinStage(token: String, streams: List<LocalStageStream>, isScreenShare: Boolean = false) {
         if (isScreenShare) {
@@ -29,7 +30,7 @@ class StageManager(
     }
 
     private fun handleMainStage(token: String, streams: List<LocalStageStream>) {
-        if (_connectionState.value != Stage.ConnectionState.DISCONNECTED) {
+        if (_mainStageConnectionState.value != Stage.ConnectionState.DISCONNECTED) {
             mainStage?.leave()
             mainStage?.release()
             mainStage = null
@@ -41,7 +42,7 @@ class StageManager(
         }
 
         try {
-            val newStage = createStage(token, streams)
+            val newStage = createStage(token, streams, false)
             newStage.join()
             mainStage = newStage
         } catch (e: BroadcastException) {
@@ -52,14 +53,14 @@ class StageManager(
     }
 
     private fun handleScreenShareStage(token: String, streams: List<LocalStageStream>) {
-        if (screenShareStage != null) {
+        if (_screenShareConnectionState.value != Stage.ConnectionState.DISCONNECTED) {
             screenShareStage?.leave()
             screenShareStage?.release()
             screenShareStage = null
         }
 
         try {
-            val newStage = createStage(token, streams)
+            val newStage = createStage(token, streams, true)
             newStage.join()
             screenShareStage = newStage
         } catch (e: BroadcastException) {
@@ -69,9 +70,9 @@ class StageManager(
         }
     }
 
-    private fun createStage(token: String, streams: List<LocalStageStream>): Stage {
-        return Stage(application, token, StageStrategyImpl(streams, publishEnabled)).apply {
-            addRenderer(StageRendererImpl(participantAdapter, _connectionState))
+    private fun createStage(token: String, streams: List<LocalStageStream>, isScreenShare: Boolean): Stage {
+        return Stage(application, token, StageStrategyImpl(streams, true)).apply {
+            addRenderer(StageRendererImpl(participantAdapter, if(isScreenShare) _screenShareConnectionState else _mainStageConnectionState , isScreenShare))
         }
     }
 

@@ -23,10 +23,12 @@ class ParticipantAdapter : RecyclerView.Adapter<ParticipantAdapter.ViewHolder>()
     fun participantJoined(participant: StageParticipant) {
         //check if the participant is already in the list
         if (participants.any { it.participantId == participant.participantId }) {
+            println("-------------->>>>>>> Participant already present.")
             return
         }
         participants.add(participant)
         notifyItemInserted(participants.size - 1)
+        println("-------------->>>>>>> Participant with ID ${participant.participantId} inserted.")
     }
 
     fun addScreenShareParticipant(participantId: String) {
@@ -36,8 +38,12 @@ class ParticipantAdapter : RecyclerView.Adapter<ParticipantAdapter.ViewHolder>()
     fun participantLeft(participantId: String) {
         val index = participants.indexOfFirst { it.participantId == participantId }
         if (index != -1) {
+            println("-------------->>>>>>> Participant with ID $participantId removed.")
             participants.removeAt(index)
             notifyItemRemoved(index)
+        }
+        else {
+            println("-------------->>>>>>> Participant with ID $participantId not found.")
         }
     }
 

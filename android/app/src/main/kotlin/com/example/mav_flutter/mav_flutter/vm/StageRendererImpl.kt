@@ -13,16 +13,25 @@ import kotlinx.coroutines.flow.MutableStateFlow
 @RequiresApi(Build.VERSION_CODES.P)
 class StageRendererImpl(
     private val participantAdapter: ParticipantAdapter,
-    private val connectionState: MutableStateFlow<Stage.ConnectionState>
+    private val connectionState: MutableStateFlow<Stage.ConnectionState>,
+    private val isScreenShare: Boolean
 ) : StageRenderer {
     override fun onParticipantPublishStateChanged(
         stage: Stage,
         participant: ParticipantInfo,
         publishState: Stage.PublishState
     ) {
-        println("-------------->>>>>>> Publish state changed: ${publishState.name}")
+        println("-------------->>>>>>> Publish state changed: ${publishState.name}, participantId: ${participant.participantId}, isLocal: ${participant.isLocal}, isScreenShare: $isScreenShare")
         if (participant.isLocal) {
-            val localParticipant = participantAdapter.participants.firstOrNull { it.isLocal }
+
+            //fetch participant by id
+            var localParticipant = participantAdapter.participants.firstOrNull { it.participantId == participant.participantId }
+
+            if(localParticipant == null) {
+                println("-------------->>>>>>> Participant not found with ID fetching by local flag")
+                localParticipant = participantAdapter.participants.firstOrNull { it.isLocal }
+            }
+
             if (localParticipant != null) {
                 localParticipant.publishState = publishState
                 participantAdapter.notifyItemChanged(0, localParticipant)
@@ -45,7 +54,7 @@ class StageRendererImpl(
         participant: ParticipantInfo,
         subscribeState: Stage.SubscribeState
     ) {
-        println("-------------->>>>>>> Subscribe state changed: ${subscribeState.name}")
+        println("-------------->>>>>>> Subscribe state changed: ${subscribeState.name}, isLocal: ${participant.isLocal}, isScreenShare: $isScreenShare")
         if (!participant.isLocal) {
             val existingParticipant = participantAdapter.participants.firstOrNull { it.participantId == participant.participantId }
             if (existingParticipant != null) {
@@ -95,24 +104,30 @@ class StageRendererImpl(
     }
 
     override fun onParticipantJoined(stage: Stage, participant: ParticipantInfo) {
-        println("-------------->>>>>>> Participant joined: ${participant.participantId}")
+        println("-------------->>>>>>> Participant joined: ${participant.participantId}, isLocal: ${participant.isLocal}, isScreenShare: $isScreenShare")
         if (participant.isLocal) {
             participantAdapter.participantUpdated(null) {
                 it.participantId = participant.participantId
+                it.isScreenShare = isScreenShare
             }
         } else {
             println("-------------->>>>>>> Remote Participant joined: ${participant.attributes}")
             participantAdapter.participantJoined(
-                StageParticipant(participant.isLocal, participant.participantId, participant.attributes)
+                StageParticipant(participant.isLocal, participant.participantId, participant.attributes, isScreenShare)
             )
         }
     }
 
     override fun onParticipantLeft(stage: Stage, participant: ParticipantInfo) {
-        println("-------------->>>>>>> Participant left: ${participant.participantId}")
+        println("-------------->>>>>>> Participant left: ${participant.participantId}, isLocal: ${participant.isLocal}, isScreenShare: $isScreenShare")
         if (participant.isLocal) {
-            participantAdapter.participantUpdated(participant.participantId) {
-                it.participantId = null
+            if(isScreenShare) {
+                participantAdapter.participantLeft(participant.participantId)
+            }
+            else {
+                participantAdapter.participantUpdated(participant.participantId) {
+                    it.participantId = null
+                }
             }
         } else {
             println("-------------->>>>>>> Remote Participant left: ${participant.participantId}")
@@ -124,8 +139,7 @@ class StageRendererImpl(
         println("-------------->>>>>>> Streams added: ${streams.joinToString(", ") { it.device.tag }}")
         if (!participant.isLocal) {
             participantAdapter.participantUpdated(participant.participantId) {
-                it.streams.addAll(streams)
-            }
+                it.streams.addAll(streams) }
         }
     }
 
