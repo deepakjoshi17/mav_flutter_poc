@@ -66,8 +66,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   DataProvider dataProvider = DataProvider();
 
-  String meetingId = "deepak-154";
-  String userName = "Marylin Monroe";
+  String meetingId = "deepak-155";
+  String userName = "Andrew Martin";
   String ownUserId = "admin-me@expinfi.com";
   String chatToken = '', videoToken = '', screenShareToken = '';
 
@@ -121,6 +121,8 @@ class _MyHomePageState extends State<MyHomePage> {
       final fetchTokens = await Future.wait([
         dataProvider.joinMeeting(joinMeetingRequestModel),
         dataProvider.createChatToken(chatRequestModel),
+        dataProvider.getParticipants(meetingId),
+        dataProvider.getChatLogs(meetingId)
       ]);
 
       // Handle join meeting response
@@ -137,18 +139,18 @@ class _MyHomePageState extends State<MyHomePage> {
       chatToken = chatTokenResponse?.token ?? "";
       log("----------->>>>>>> Chat token: ${chatToken.isEmpty ? 'empty' : 'Not empty'}");
 
-      final fetchMeetingData = await Future.wait([
+      /*final fetchMeetingData = await Future.wait([
         dataProvider.getParticipants(meetingId),
         dataProvider.getChatLogs(meetingId)
-      ]);
+      ]);*/
 
       // Handle participants response
-      final participantsResponse = fetchMeetingData[0].data as GetParticipantsResponseModel?;
+      final participantsResponse = fetchTokens[2].data as GetParticipantsResponseModel?;
       this.participantsResponse = participantsResponse;
       log("----------->>>>>>> Participants: ${participantsResponse?.participants.user.length ?? 0}");
 
       // Handle chat logs response
-      final chatLogsResponse = fetchMeetingData[1].data as ChatLogsResponseModel?;
+      final chatLogsResponse = fetchTokens[3].data as ChatLogsResponseModel?;
       log("----------->>>>>>> Chat logs length: ${chatLogsResponse?.events.length ?? 0}");
       if (chatLogsResponse != null) {
         final events = chatLogsResponse.events;
@@ -406,10 +408,9 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget getStreamingWidget() {
 
     if(stageJoined) {
-      return Stack(
-        alignment: Alignment.bottomCenter,
+      return Column(
         children: [
-          getPlatformView(),
+          Expanded(child: getPlatformView()),
           getControls(),
         ],
       );
@@ -476,7 +477,6 @@ class _MyHomePageState extends State<MyHomePage> {
                 decoration: BoxDecoration(
                   color: Color(0xFFF2EFED),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Color(0xFFF15D22), width: 5),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(11),

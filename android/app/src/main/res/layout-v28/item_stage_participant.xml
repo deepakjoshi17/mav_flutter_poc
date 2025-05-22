@@ -10,7 +10,7 @@
         android:id="@+id/participant_preview_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:background="@android:color/darker_gray" />
+        tools:background="#F2EFED" />
 
     <LinearLayout
         android:layout_width="wrap_content"
