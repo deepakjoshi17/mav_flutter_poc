@@ -19,6 +19,7 @@ import 'package:mav_flutter/provider.dart';
 import 'package:mav_flutter/widgets/custom_app_bar.dart';
 import 'package:mav_flutter/widgets/session_feedback_sheet.dart';
 import 'package:mav_flutter/widgets/meeting_ended_sheet.dart';
+import 'package:mav_flutter/widgets/chat_and_participants_sheet.dart';
 
 class VideoDevice {
   final String label;
@@ -845,14 +846,11 @@ class _MyHomePageState extends State<MyHomePage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Padding(
-        padding:
-            EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-        child: ChatUI(
-          chatManager: _chatManager,
-          chatService: _chatService,
-          onSendMessage: _handleSendMessage,
-        ),
+      builder: (context) => ChatAndParticipantsSheet(
+        chatManager: _chatManager,
+        chatService: _chatService,
+        onSendMessage: _handleSendMessage,
+        participants: participantsResponse?.participants.user,
       ),
     );
   }

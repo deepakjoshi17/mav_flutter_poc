@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:core';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:mav_flutter/chat/chat_manager.dart';
 import 'package:mav_flutter/chat/chat_service.dart';
@@ -12,7 +13,7 @@ class ChatUI extends StatefulWidget {
   final Function(String) onSendMessage;
 
   const ChatUI({
-    super.key, 
+    super.key,
     required this.chatManager,
     required this.chatService,
     required this.onSendMessage,
@@ -32,7 +33,7 @@ class _ChatUIState extends State<ChatUI> {
     super.initState();
     // Initialize with existing messages
     _messages.addAll(widget.chatService.currentMessages);
-    
+
     _messagesSubscription = widget.chatService.messages.listen((messages) {
       setState(() {
         _messages.add(messages);
@@ -74,128 +75,151 @@ class _ChatUIState extends State<ChatUI> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.7,
       decoration: const BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Chat',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.black),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-          ),
-          const Divider(),
-          Expanded(
-            child: ListView.builder(
-              reverse: true,
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[_messages.length - 1 - index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-                  child: Align(
-                    alignment: message.isSent ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width * 0.7,
-                      ),
-                      padding: const EdgeInsets.all(12.0),
-                      decoration: BoxDecoration(
-                        color: message.isSent ? Colors.blue : Colors.grey[200],
-                        borderRadius: BorderRadius.circular(16.0),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: message.isSent ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            message.content,
-                            style: TextStyle(
-                              color: message.isSent ? Colors.white : Colors.black,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            message.formattedTime,
-                            style: TextStyle(
-                              color: message.isSent ? Colors.white70 : Colors.black54,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const Divider(),
-          Container(
-            padding: const EdgeInsets.all(8.0),
-            color: Colors.white,
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    style: const TextStyle(color: Colors.black),
-                    decoration: InputDecoration(
-                      hintText: 'Type a message...',
-                      hintStyle: const TextStyle(color: Colors.grey),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24.0),
-                        borderSide: const BorderSide(color: Colors.grey),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24.0),
-                        borderSide: const BorderSide(color: Colors.grey),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24.0),
-                        borderSide: const BorderSide(color: Colors.blue),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    ),
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                const SizedBox(width: 8.0),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white),
-                    onPressed: _sendMessage,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      child: _messages.isEmpty
+          ? getEmptyScreen()
+          : getChatList(),
     );
   }
+
+  Widget getSendButton() => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16),
+    margin:
+    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(
+        color: const Color(0xFF908B85),
+        width: 1.5,
+      ),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: _messageController,
+            style: const TextStyle(
+                color: Colors.black, fontSize: 14),
+            decoration: InputDecoration(
+              hintText: 'Type a message...',
+              hintStyle: const TextStyle(color: Colors.grey),
+              border: InputBorder.none,
+            ),
+            onSubmitted: (_) => _sendMessage(),
+          ),
+        ),
+        GestureDetector(
+          onTap: () {},
+          child: SvgPicture.asset("assets/ic_happy_emoji.svg"),
+        ),
+        const SizedBox(width: 8.0),
+        GestureDetector(
+          onTap: _sendMessage,
+          child: SvgPicture.asset("assets/ic_send_chat.svg"),
+        )
+      ],
+    ),
+  );
+
+  Widget getEmptyScreen() => Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Spacer(),
+      Image.asset(
+        "assets/ic_empty_conversation.png",
+        height: 50,
+        width: 50,
+      ),
+      const SizedBox(height: 12),
+      const Text(
+        'Start a Conversation',
+        style: TextStyle(
+          color: Color(0xFF413930),
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      const SizedBox(height: 6),
+      const Text(
+        'There are no messages here yet. \nStart a conversation \nby sending a Message',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: Color(0xFF908B85),
+          fontSize: 12,
+        ),
+      ),
+      Spacer(),
+      Align(
+          alignment: Alignment.bottomCenter,
+          child: getSendButton()),
+    ],
+  );
+
+  Widget getChatList() => Column(
+    children: [
+      Expanded(
+        child: ListView.builder(
+          reverse: true,
+          itemCount: _messages.length,
+          itemBuilder: (context, index) {
+            final message = _messages[_messages.length - 1 - index];
+            return Padding(
+              padding: const EdgeInsets.symmetric(
+                  vertical: 4.0, horizontal: 16),
+              child: Column(
+                crossAxisAlignment: message.isSent
+                    ? CrossAxisAlignment.end
+                    : CrossAxisAlignment.start,
+                children: [
+                  Visibility(
+                    visible: !message.isSent,
+                    child: Text(
+                      message.attributes?['displayName'] ?? 'NA',
+                      style: TextStyle(
+                        color: Colors.black54,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 6),
+                    constraints: BoxConstraints(
+                      maxWidth:
+                      MediaQuery.of(context).size.width * 0.7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: message.isSent
+                          ? Colors.white
+                          : Color(0xFFE5E1DE),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      message.content,
+                      style: TextStyle(
+                          color: Color(0xFF413930), fontSize: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    message.formattedTime,
+                    style: TextStyle(
+                      color: Colors.black54,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+      getSendButton(),
+    ],
+  );
 }
 
 class ChatMessage {
@@ -218,10 +242,10 @@ class ChatMessage {
   String get formattedTime {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
-    
+
     final timeFormat = DateFormat('hh:mm a');
     final dateTimeFormat = DateFormat('dd MMM hh:mm a');
-    
+
     if (difference.inDays < 1) {
       return timeFormat.format(timestamp);
     } else {
@@ -238,4 +262,4 @@ class ChatMessage {
 
   @override
   int get hashCode => id.hashCode;
-} 
+}
