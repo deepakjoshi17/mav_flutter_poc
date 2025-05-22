@@ -341,6 +341,11 @@ class _MyHomePageState extends State<MyHomePage> {
           preferredSize: const Size.fromHeight(100),
           child: CustomAppBar(
             moduleName: widget.title,
+            screenName: 'Live Class',
+            onSettings: () {
+              // TODO Handle settings button press
+              Fluttertoast.showToast(msg: "To be implemented");
+            },
           ),
         ),
         body: Stack(
@@ -533,7 +538,7 @@ class _MyHomePageState extends State<MyHomePage> {
               // raiseHandButton(),
               getScreenShareButton(),
               getMoreIcon(),
-              joinOrLeaveStageButton(),
+              leaveStageButton(),
             ],
           ),
         ),
@@ -638,27 +643,106 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Widget joinOrLeaveStageButton() {
+  Widget leaveStageButton() {
     return getControlButton(
         'assets/ic_exit_meet.svg', () {
-      if (stageJoined) {
-        setState(() {
-          stageJoined = false;
-        });
-        executeIvsOperations("leaveStage");
-      } else {
-        setState(() {
-          stageJoined = true;
-        });
-        executeIvsOperations("joinStage", args: {
-          "videoToken": videoToken,
-          "chatToken": chatToken,
-          'audioMuted': isAudioMuted,
-          'videoMuted': isVideoMuted,
-          "region": "us-east-1",
-        });
-      }
+      showDialog(context: context, builder: (_) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          child: Center(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 12,
+                    offset: Offset(0, 4),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.black,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Are you sure you want to end the session ?',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    //Subtitle
+                    '',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFFB0B0B0),
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        leaveStage();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Color(0xFFF15D22), width: 2.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                        foregroundColor: Color(0xFFF15D22),
+                        textStyle: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      child: const Text('Leave the meeting'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }, barrierDismissible: true);
     }, isAudioVideo: true);
+  }
+
+  void leaveStage() {
+    if (stageJoined) {
+      stageJoined = false;
+      executeIvsOperations("leaveStage");
+    }
+    Navigator.pushReplacement(context, MaterialPageRoute(
+      builder: (context) => MeetingEndedSheet(
+        moduleName: widget.title,
+        nextSessionDateTime: nextSessionDateTime,
+      ),
+    ));
   }
 
   void executeIvsOperations(String methodName, {dynamic args}) {

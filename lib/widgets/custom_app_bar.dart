@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 class CustomAppBar extends StatelessWidget {
   final String moduleName;
+  final String screenName;
   final VoidCallback? onGuideMe;
   final VoidCallback? onSettings;
   final bool showGuideMe;
@@ -10,6 +11,7 @@ class CustomAppBar extends StatelessWidget {
   const CustomAppBar({
     super.key,
     required this.moduleName,
+    this.screenName = '',
     this.onGuideMe,
     this.onSettings,
     this.showGuideMe = true,
@@ -67,53 +69,53 @@ class CustomAppBar extends StatelessWidget {
               ),
               Spacer(),
               // Module/session name
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.local_fire_department, color: Color(0xFFF15D22), size: 20),
-                    const SizedBox(width: 6),
-                    Flexible(
-                      child: Text(
-                        moduleName,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black,
+              Visibility(
+                visible: screenName != 'Meeting ended',
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.local_fire_department, color: Color(0xFFF15D22), size: 20),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          moduleName,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               Spacer(),
-              /*GestureDetector(
-                onTap: onSettings,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF2EFED),
-                    shape: BoxShape.circle,
+              Visibility(
+                visible: screenName != 'Meeting ended',
+                child: GestureDetector(
+                  onTap: () {
+
+                    if(screenName == 'Live Class') {
+                      onSettings?.call();
+                      return;
+                    }
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF2EFED),
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(6),
+                    child: screenName == 'Live Class' ? SvgPicture.asset("assets/ic_setting_outline.svg") : Icon(Icons.close, size: 20),
                   ),
-                  padding: const EdgeInsets.all(6),
-                  child: SvgPicture.asset('assets/ic_setting_outline.svg', height: 20),
-                ),
-              ),*/
-              GestureDetector(
-                onTap: () {
-                  Navigator.pop(context);
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF2EFED),
-                    shape: BoxShape.circle,
-                  ),
-                  padding: const EdgeInsets.all(6),
-                  child: Icon(Icons.close, size: 20),
                 ),
               ),
             ],

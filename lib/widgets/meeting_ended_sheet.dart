@@ -8,11 +8,11 @@ class MeetingEndedSheet extends StatelessWidget {
   final VoidCallback? onGoBack;
 
   const MeetingEndedSheet({
-    Key? key,
+    super.key,
     required this.moduleName,
     required this.nextSessionDateTime,
     this.onGoBack,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +25,7 @@ class MeetingEndedSheet extends StatelessWidget {
         backgroundColor: Colors.white,
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(100),
-          child: CustomAppBar(moduleName: moduleName, showGuideMe: false),
+          child: CustomAppBar(moduleName: moduleName, showGuideMe: false, screenName: 'Meeting ended'),
         ),
         body: Container(
           width: double.infinity,
@@ -122,7 +122,7 @@ class MeetingEndedSheet extends StatelessWidget {
                       if (onGoBack != null) {
                         onGoBack!();
                       } else {
-                        Navigator.of(context).pop();
+                        Navigator.of(context).popUntil((route) => route.isFirst);
                       }
                     },
                   ),

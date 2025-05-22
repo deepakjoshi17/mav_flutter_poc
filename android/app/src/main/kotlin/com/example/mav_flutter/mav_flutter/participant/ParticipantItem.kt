@@ -18,6 +18,7 @@ import com.example.mav_flutter.mav_flutter.R
 import java.util.Locale
 import kotlin.math.roundToInt
 import androidx.core.graphics.toColorInt
+import com.amazonaws.ivs.broadcast.StageStream
 import kotlin.math.absoluteValue
 
 @RequiresApi(Build.VERSION_CODES.P)
@@ -99,8 +100,13 @@ class ParticipantItem @JvmOverloads constructor(
 
     }
 
-    private fun updateSpeakingBorder(isSpeaking: Boolean) {
-        if (isSpeaking) {
+    private fun updateSpeakingBorder(isSpeaking: Boolean, participant: StageParticipant, audioStream: StageStream?) {
+        val shouldShowBorder = isSpeaking && 
+            participant.isLocal && 
+            audioStream != null && 
+            !audioStream.muted
+
+        if (shouldShowBorder) {
             previewContainer.setBackgroundColor(SPEAKING_BORDER_COLOR.toColorInt())
             placeholderView.setBackgroundColor(Color(0xFFF2EFED).toArgb())
         } else {
@@ -192,14 +198,14 @@ class ParticipantItem @JvmOverloads constructor(
                 it.setStatsCallback { _, rms ->
                     currentAudioLevel = rms.roundToInt()
                     textViewAudioLevel.text = "Audio Level: $currentAudioLevel dB"
-                    updateSpeakingBorder(currentAudioLevel > SPEAKING_THRESHOLD)
+                    updateSpeakingBorder(currentAudioLevel > SPEAKING_THRESHOLD, participant, newAudioStream)
                 }
             }
         }
         audioDeviceUrn = newAudioStream?.device?.descriptor?.urn
 
         // Update border state based on current audio level
-        updateSpeakingBorder(currentAudioLevel > SPEAKING_THRESHOLD)
+        updateSpeakingBorder(currentAudioLevel > SPEAKING_THRESHOLD, participant, newAudioStream)
     }
 
 }
