@@ -1,5 +1,6 @@
 package com.example.mav_flutter.mav_flutter.participant
 
+import android.annotation.SuppressLint
 import android.os.Build
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -15,6 +16,7 @@ class ParticipantAdapter : RecyclerView.Adapter<ParticipantAdapter.ViewHolder>()
 
     val participants = mutableListOf<StageParticipant>()
     private val screenShareParticipantIds = mutableSetOf<String>()
+    private var spotlightedUserIds: Set<String> = emptySet()
 
     init {
         setHasStableIds(true)
@@ -65,6 +67,14 @@ class ParticipantAdapter : RecyclerView.Adapter<ParticipantAdapter.ViewHolder>()
         notifyItemChanged(0, participants[0])
     }
 
+    @SuppressLint("NotifyDataSetChanged")
+    fun setSpotlightedUserIds(ids: Set<String>) {
+        spotlightedUserIds = ids
+        // Move spotlighted users to the top
+        participants.sortWith(compareByDescending { spotlightedUserIds.contains(it.attributes?.get("userId")) })
+        notifyDataSetChanged()
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val item = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_stage_participant, parent, false) as ParticipantItem
@@ -82,7 +92,9 @@ class ParticipantAdapter : RecyclerView.Adapter<ParticipantAdapter.ViewHolder>()
             .toLong()
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        return holder.participantItem.bind(participants[position])
+        val participant = participants[position]
+        val isSpotlighted = participant.participantId != null && spotlightedUserIds.contains(participant.attributes?.get("userId"))
+        holder.participantItem.bind(participant, isSpotlighted)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int, payloads: MutableList<Any>) {

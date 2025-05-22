@@ -197,6 +197,11 @@ class MainActivity: FlutterFragmentActivity() {
                         result.error("DEVICE_ERROR", "Failed to switch video device", e.message)
                     }
                 }
+                "updateSpotlight" -> {
+                    val userIds = call.argument<List<String>>("userIds") ?: emptyList()
+                    viewModel.setSpotlightedUserIds(userIds)
+                    result.success(null)
+                }
                 else -> result.notImplemented()
             }
         }

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -91,6 +92,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   VideoDevice? selectedVideoDeviceObj;
   List<VideoDevice> availableVideoDeviceObjs = [];
+
+  Set<String> spotlightedUserIds = {};
 
   Future<void> initializeMeeting() async {
     setState(() {
@@ -238,14 +241,15 @@ class _MyHomePageState extends State<MyHomePage> {
     _chatManager.chatMessages.listen((message) {
         if(message.messageType == "chatMessage") {
           setState(() {
-            log("Chat message added to ui: ${message.content}");
+            log("Chat message added to ui: ${message.content}, attributes: ${message.attributes}");
             // _chatMessages.add(message);
             _chatService.addMessage(message);
           });
         }
         else {
 
-          log("Chat event received: ${message.messageType}");
+          log("Chat event received: ${message.messageType}, attributes: ${message.attributes}");
+
           switch(message.content) {
             case "SHARPEN_UP_LAUNCHED":
             case "SHARPEN_UP_RELAUNCHED":
@@ -308,7 +312,29 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ));
               break;
+            case "ADD_PARTICIPANT_TO_SPOTLIGHT":
+              log("userlist: ${message.attributes?['userIdList']}");
+              List<String> userIdList = ((jsonDecode(message.attributes?['userIdList'] ?? "[]") ?? []) as List).map(
+                      (e) => e.toString()).toList();
+              if (userIdList.isNotEmpty) {
+                setState(() {
+                  spotlightedUserIds.addAll(userIdList);
+                  _updateSpotlightOnNative();
+                  log('Spotlighted users: $spotlightedUserIds');
+                });
+              }
+              break;
             case "REMOVE_PARTICIPANT_FROM_SPOTLIGHT":
+              List<String> userIdList = ((jsonDecode(message.attributes?['userIdList'] ?? "[]") ?? []) as List).map(
+                      (e) => e.toString()).toList();
+              log("user id list: $userIdList");
+              if (userIdList.isNotEmpty) {
+                setState(() {
+                  spotlightedUserIds.removeAll(userIdList.cast<String>());
+                  _updateSpotlightOnNative();
+                  log('Spotlighted users: $spotlightedUserIds');
+                });
+              }
               break;
             default:
           }
@@ -969,5 +995,14 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
     );
+  }
+
+  void _updateSpotlightOnNative() {
+    if (Platform.isAndroid) {
+      const platform = MethodChannel('mav_flutter/controls');
+      platform.invokeMethod('updateSpotlight', {
+        'userIds': spotlightedUserIds.toList(),
+      });
+    }
   }
 }

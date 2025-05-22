@@ -106,7 +106,7 @@ class StageChat(var sink: EventChannel.EventSink?) {
                                 "content" to message.content,
                                 "sender" to message.sender.attributes?.get("displayName"),
                                 "messageType" to messageType,
-                                "attributes" to message.sender.attributes,
+                                "attributes" to message.attributes,
                                 "timestamp" to message.sendTime.time.toString()
                             )
                             sink?.success(messageData)

@@ -22,6 +22,7 @@ class NativeViewModel(application: Application) : AndroidViewModel(application) 
     private val screenCaptureManager = ScreenCaptureManager(application, deviceDiscovery)
     private val stageManager = StageManager(application, participantAdapter)
     private val streams = mutableListOf<LocalStageStream>()
+    private var spotlightedUserIds: Set<String> = emptySet()
 
     fun initLocalParticipant(attributes: Map<String, String>) {
         val localParticipant = StageParticipant(true, null, attributes)
@@ -162,5 +163,10 @@ class NativeViewModel(application: Application) : AndroidViewModel(application) 
         } catch (e: Exception) {
             Log.e(TAG, "Error updating video device by descriptor", e)
         }
+    }
+
+    fun setSpotlightedUserIds(ids: List<String>) {
+        spotlightedUserIds = ids.toSet()
+        participantAdapter.setSpotlightedUserIds(spotlightedUserIds)
     }
 }

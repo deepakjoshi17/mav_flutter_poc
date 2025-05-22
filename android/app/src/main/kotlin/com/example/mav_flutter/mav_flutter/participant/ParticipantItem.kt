@@ -116,7 +116,7 @@ class ParticipantItem @JvmOverloads constructor(
     }
 
     @SuppressLint("SetTextI18n")
-    fun bind(participant: StageParticipant) {
+    fun bind(participant: StageParticipant, isSpotlighted: Boolean = false) {
         val participantId = if (participant.isLocal) {
             "You (${participant.participantId ?: "Disconnected"})"
         } else {
@@ -206,6 +206,12 @@ class ParticipantItem @JvmOverloads constructor(
 
         // Update border state based on current audio level
         updateSpeakingBorder(currentAudioLevel > SPEAKING_THRESHOLD, participant, newAudioStream)
+
+        if (isSpotlighted) {
+            this.setBackgroundResource(android.R.color.holo_blue_dark)
+        } else {
+            this.setBackgroundResource(0)
+        }
     }
 
 }
