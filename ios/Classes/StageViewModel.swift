@@ -50,6 +50,7 @@ class StageViewModel: NSObject {
     
     private var stage: IVSStage?
     private var localUserWantsPublish: Bool = true
+    private var localUserWantsPublishScreenShare: Bool = true
     private var stageRenderer: IVSStageRenderer?
     private var stageStrategy: IVSStageStrategy?
     
@@ -531,9 +532,14 @@ class StageViewModel: NSObject {
                 dataForParticipant: { participantId in
                     self.participantsData.first(where: { $0.participantId == participantId })
                 },
-                getLocalUserWantsPublish: { self.localUserWantsPublish },
-                getLocalStreams: { self.localStreams },
-                getScreenShareStream: { self.screenShareStream },
+                getLocalUserWantsPublish: { self.localUserWantsPublishScreenShare },
+                getLocalStreams: {
+                    guard let screenStreams = self.screenShareStream else {
+                        return []
+                    }
+                    return [screenStreams]
+                },
+                getScreenShareStream: { nil },
                 getScreenShareParticipantId: { self.screenShareParticipantId }
             )
             let ssStage = try IVSStage(token: token, strategy: self.screenShareStageStrategy!)
