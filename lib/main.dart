@@ -68,6 +68,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String meetingId = "deepak-151";
   String ownUserId = "admin-me@expinfi.com";
   String chatToken = '', videoToken = '', screenShareToken = '';
+  String screenShareParticipantId = "";
 
   CreateChatTokenResponseModel? createChatTokenResponse;
   JoinMeetingResponseModel? joinMeetingResponse;

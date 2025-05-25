@@ -50,12 +50,15 @@ class StageViewModel: NSObject {
     
     private var stage: IVSStage?
     private var localUserWantsPublish: Bool = true
-    
+    private var stageRenderer: IVSStageRenderer?
+    private var stageStrategy: IVSStageStrategy?
     
     // MARK: - IVS Stage Streaming Properties
     private let recorder = RPScreenRecorder.shared()
     private var isRecording = false
     private var screenShareStage: IVSStage?
+    private var screenShareStageRenderer: IVSStageRenderer?
+    private var screenShareStageStrategy: IVSStageStrategy?
     private var screenShareStream: IVSLocalStageStream?
     private var customImageSource: IVSCustomImageSource?
     private var screenShareParticipantId: String = ""
@@ -248,12 +251,30 @@ class StageViewModel: NSObject {
         
         do {
             self.stage = nil
-            let stage = try IVSStage(token: token, strategy: self)
-            let renderer = StageRenderer(getParticipantsData: {return self.participantsData}, signalParticipantUpdate: signalParticipantUpdate, dataForParticipant: dataForParticipant, mutatingParticipant: mutatingParticipant, updateConnectionState: { state in
-                self.stageConnectionState = state
-            },
-            displayErrorAlert: displayErrorAlert)
-            stage.addRenderer(self)
+            self.stageRenderer = nil
+            self.stageStrategy = nil
+            
+            self.stageStrategy = StageStrategy(
+                dataForParticipant: { participantId in
+                    self.participantsData.first(where: { $0.participantId == participantId })
+                },
+                getLocalUserWantsPublish: { self.localUserWantsPublish },
+                getLocalStreams: { self.localStreams },
+                getScreenShareStream: { self.screenShareStream },
+                getScreenShareParticipantId: { self.screenShareParticipantId }
+            )
+            
+            let stage = try IVSStage(token: token, strategy: self.stageStrategy!)
+            self.stageRenderer = StageViewRenderer(
+                getParticipantsData: { self.participantsData },
+                setParticipantsData: { self.participantsData = $0 },
+                signalParticipantUpdate: self.signalParticipantUpdate,
+                mutatingParticipant: self.mutatingParticipant,
+                displayErrorAlert: self.displayErrorAlert,
+                stageConnectionStateUpdate: { self.stageConnectionState = $0 }
+            )
+            
+            stage.addRenderer(self.stageRenderer!)
             try stage.join()
             self.stage = stage
         } catch {
@@ -506,7 +527,16 @@ class StageViewModel: NSObject {
             config.degradationPreference = .balanced
 
             // 2. Join the stage
-            let ssStage = try IVSStage(token: token, strategy: self)
+            self.screenShareStageStrategy = StageStrategy(
+                dataForParticipant: { participantId in
+                    self.participantsData.first(where: { $0.participantId == participantId })
+                },
+                getLocalUserWantsPublish: { self.localUserWantsPublish },
+                getLocalStreams: { self.localStreams },
+                getScreenShareStream: { self.screenShareStream },
+                getScreenShareParticipantId: { self.screenShareParticipantId }
+            )
+            let ssStage = try IVSStage(token: token, strategy: self.screenShareStageStrategy!)
             try ssStage.join()
             self.screenShareStage = ssStage
 
@@ -559,123 +589,6 @@ class StageViewModel: NSObject {
         return isRecording
     }
     
-}
-
-// These callbacks are triggered by `IVSStage.refreshStrategy()`
-// Call `IVSStage.refreshStrategy()` whenever we want to update the answers to these questions
-extension StageViewModel: IVSStageStrategy {
-
-    func stage(_ stage: IVSStage, shouldSubscribeToParticipant participant: IVSParticipantInfo) -> IVSStageSubscribeType {
-        guard let data = dataForParticipant(participant.participantId) else { return .none }
-        let subType: IVSStageSubscribeType = data.isAudioOnly ? .audioOnly : .audioVideo
-
-        return subType
-    }
-
-    func stage(_ stage: IVSStage, shouldPublishParticipant participant: IVSParticipantInfo) -> Bool {
-        return localUserWantsPublish
-    }
-
-    func stage(_ stage: IVSStage, streamsToPublishForParticipant participant: IVSParticipantInfo) -> [IVSLocalStageStream] {
-        var streams = Array<IVSLocalStageStream>()
-        // We should only try to publish streams for the local participant
-        streams.append(contentsOf: localStreams)
-        if participant.participantId != screenShareParticipantId {
-            return streams
-        }
-        streams.append(contentsOf: [screenShareStream] as? [IVSLocalStageStream] ?? [])
-        return streams
-    }
-
-}
-
-extension StageViewModel: IVSStageRenderer {
-
-    func stage(_ stage: IVSStage, participantDidJoin participant: IVSParticipantInfo) {
-        print("[IVSStageRenderer] participantDidJoin - \(participant.participantId)")
-        if participant.isLocal {
-            // Update local participant ID
-            participantsData[0].participantId = participant.participantId
-            // Notify UI updates
-            signalParticipantUpdate(index: 0, changeType: .updated)
-        } else {
-            // Create and store ParticipantData for newly joined participants
-            participantsData.append(ParticipantData(isLocal: false, participantId: participant.participantId))
-            // Notify UI updates
-            signalParticipantUpdate(index: (participantsData.count - 1), changeType: .inserted)
-        }
-    }
-
-    func stage(_ stage: IVSStage, participantDidLeave participant: IVSParticipantInfo) {
-        print("[IVSStageRenderer] participantDidLeave - \(participant.participantId)")
-        if participant.isLocal {
-            // Reset local participant ID
-            participantsData[0].participantId = nil
-            // Notify UI updates
-            signalParticipantUpdate(index: 0, changeType: .updated)
-        } else {
-            if let index = participantsData.firstIndex(where: { $0.participantId == participant.participantId }) {
-                participantsData.remove(at: index)
-                // Notify UI updates
-                signalParticipantUpdate(index: index, changeType: .deleted)
-            }
-        }
-    }
-
-    func stage(_ stage: IVSStage, participant: IVSParticipantInfo, didChange publishState: IVSParticipantPublishState) {
-        print("[IVSStageRenderer] participant \(participant.participantId) didChangePublishState to \(publishState.text)")
-        mutatingParticipant(participant.participantId) { data in
-            data.publishState = publishState
-        }
-    }
-    
-    func stage(_ stage: IVSStage, participant: IVSParticipantInfo, didChange subscribeState: IVSParticipantSubscribeState) {
-        print("[IVSStageRenderer] participant \(participant.participantId) didChangeSubscribeState to \(subscribeState.text)")
-        mutatingParticipant(participant.participantId) { data in
-            data.subscribeState = subscribeState
-        }
-    }
-
-    func stage(_ stage: IVSStage, participant: IVSParticipantInfo, didAdd streams: [IVSStageStream]) {
-        print("[IVSStageRenderer] participant (\(participant.participantId)) didAdd \(streams.count) streams")
-        if participant.isLocal { return }
-
-        mutatingParticipant(participant.participantId) { data in
-            data.streams.append(contentsOf: streams)
-        }
-    }
-
-    func stage(_ stage: IVSStage, participant: IVSParticipantInfo, didRemove streams: [IVSStageStream]) {
-        print("[IVSStageRenderer] participant (\(participant.participantId)) didRemove \(streams.count) streams")
-        if participant.isLocal { return }
-
-        mutatingParticipant(participant.participantId) { data in
-            // Use unique device locator to remove desinated streams for participant
-            let oldUrns = streams.map { $0.device.descriptor().urn }
-            data.streams.removeAll(where: { stream in
-                return oldUrns.contains(stream.device.descriptor().urn)
-            })
-        }
-    }
-
-    func stage(_ stage: IVSStage, participant: IVSParticipantInfo, didChangeMutedStreams streams: [IVSStageStream]) {
-        print("[IVSStageRenderer] participant (\(participant.participantId)) didChangeMutedStreams")
-        if participant.isLocal { return }
-        if let index = participantsData.firstIndex(where: { $0.participantId == participant.participantId }) {
-            // The `streams` are the same objects managed by the SDK, so we don't need to update anything. The refs are updated.
-            // Notify UI updates
-            signalParticipantUpdate(index: index, changeType: .updated)
-        }
-    }
-
-    func stage(_ stage: IVSStage, didChange connectionState: IVSStageConnectionState, withError error: Error?) {
-        print("[IVSStageRenderer] didChangeConnectionStateWithError to \(connectionState.text)")
-        stageConnectionState = connectionState;
-        if let error = error {
-            displayErrorAlert(error)
-        }
-    }
-
 }
 
 extension StageViewModel: IVSBroadcastSession.Delegate {

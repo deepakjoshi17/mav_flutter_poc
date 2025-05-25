@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		077494162DD46CA5001AA53C /* ParticipantCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 077494152DD46CA5001AA53C /* ParticipantCollectionViewCell.xib */; };
 		077494182DD46D01001AA53C /* .gitkeep in Resources */ = {isa = PBXBuildFile; fileRef = 077494172DD46D01001AA53C /* .gitkeep */; };
+		07D614322DE2FC5600E7BBE2 /* StageViewRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D614312DE2FC5600E7BBE2 /* StageViewRenderer.swift */; };
+		07D614342DE3035700E7BBE2 /* StageStrategy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07D614332DE3035700E7BBE2 /* StageStrategy.swift */; };
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
@@ -64,6 +66,8 @@
 /* Begin PBXFileReference section */
 		077494152DD46CA5001AA53C /* ParticipantCollectionViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = ParticipantCollectionViewCell.xib; sourceTree = "<group>"; };
 		077494172DD46D01001AA53C /* .gitkeep */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitkeep; sourceTree = "<group>"; };
+		07D614312DE2FC5600E7BBE2 /* StageViewRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StageViewRenderer.swift; sourceTree = "<group>"; };
+		07D614332DE3035700E7BBE2 /* StageStrategy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StageStrategy.swift; sourceTree = "<group>"; };
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
@@ -190,6 +194,8 @@
 				966176B62DBF79CF008BD22C /* StageLayoutCalculator.swift */,
 				966176B72DBF79CF008BD22C /* StageViewModel.swift */,
 				966176B82DBF79CF008BD22C /* Utils.swift */,
+				07D614312DE2FC5600E7BBE2 /* StageViewRenderer.swift */,
+				07D614332DE3035700E7BBE2 /* StageStrategy.swift */,
 			);
 			path = Classes;
 			sourceTree = "<group>";
@@ -465,6 +471,7 @@
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				966176BE2DBF79CF008BD22C /* ParticipantCollectionViewCell.swift in Sources */,
 				966176BF2DBF79CF008BD22C /* Observable.swift in Sources */,
+				07D614322DE2FC5600E7BBE2 /* StageViewRenderer.swift in Sources */,
 				966176C02DBF79CF008BD22C /* ParticipantCollectionViewLayout.swift in Sources */,
 				966176C12DBF79CF008BD22C /* AWSBroadcastView.swift in Sources */,
 				966176C22DBF79CF008BD22C /* ChatView.swift in Sources */,
@@ -480,6 +487,7 @@
 				966176CC2DBF79CF008BD22C /* Utils.swift in Sources */,
 				966176CD2DBF79CF008BD22C /* IVSChatManager.swift in Sources */,
 				966176CE2DBF79CF008BD22C /* Message.swift in Sources */,
+				07D614342DE3035700E7BBE2 /* StageStrategy.swift in Sources */,
 				966176CF2DBF79CF008BD22C /* RemoteImageView.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);
