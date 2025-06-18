@@ -8,6 +8,7 @@
 import Foundation
 import UIKit
 import AmazonIVSBroadcast
+import ReplayKit
 
 protocol AWSBroadcastViewStateProtocol: AnyObject {
     func onError()
@@ -23,6 +24,7 @@ class AWSBroadcastView: UICollectionView {
     private let viewModel = StageViewModel()
     
     var stateProtocol: AWSBroadcastViewStateProtocol?
+    private var broadcastPicker: RPSystemBroadcastPickerView?
     
     func initView() {
         
@@ -99,11 +101,39 @@ class AWSBroadcastView: UICollectionView {
     }
     
     func startScreenShare(token: String, participantId: String){
-        viewModel.startScreenShare(token: token, participantId: participantId)
+//          viewModel.startScreenShare(token: token, participantId: participantId)
+        // launch broadcast picker dialog here
+        showBroadcastPickerDialog()
     }
     
     func stopScreenShare(){
         viewModel.stopScreenShare()
+    }
+    
+    private func showBroadcastPickerDialog() {
+        guard broadcastPicker == nil else {
+            triggerPickerButton()
+            return
+        }
+
+        let picker = RPSystemBroadcastPickerView(frame: CGRect(x: -100, y: -100, width: 50, height: 50)) // off-screen
+        picker.preferredExtension = "com.example.mavflutter.mavFlutter.MavScreenshareBroadcast" // <-- replace with your Broadcast Extension's bundle ID
+        picker.showsMicrophoneButton = true
+        self.broadcastPicker = picker
+        self.addSubview(picker)
+        
+        triggerPickerButton()
+    }
+
+    private func triggerPickerButton() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            for view in self.broadcastPicker?.subviews ?? [] {
+                if let button = view as? UIButton {
+                    button.sendActions(for: .touchUpInside)
+                    break
+                }
+            }
+        }
     }
     
 }
